@@ -116,6 +116,13 @@
         drawDebug();
         drawCorners(markers);
         drawId(markers);
+        
+        if (resetCanvas) {
+          drawCanvas.width = window.innerWidth;
+            drawCanvas.height = window.innerHeight;
+          }
+          drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+          drawContext.drawImage(canvas, 0, 0, drawCanvas.width, drawCanvas.height);
       }
     }
 
@@ -129,23 +136,18 @@
       
       context.clearRect(0, 0, canvas.width, canvas.height);
       
+      // context.putImageData( createImage(detector.thres, debugImage), 0, 0);
+      drawContours(detector.contours, 0, 0, width, height, function(hole) {return hole? "magenta": "blue";});
+      
       /*context.putImageData(imageData, 0, 0);
       context.putImageData( createImage(detector.grey, debugImage), width, 0);
       context.putImageData( createImage(detector.thres, debugImage), width * 2, 0);
-      */
-      drawContours(detector.contours, 0, 0, width, height, function(hole) {return hole? "magenta": "blue";});
-      /*drawContours(detector.polys, width, height, width, height, function() {return "green";} );
+      
+      drawContours(detector.contours, 0, height, width, height, function(hole) {return hole? "magenta": "blue";});
+      drawContours(detector.polys, width, height, width, height, function() {return "green";} );
       drawContours(detector.candidates, width * 2, height, width, height, function() {return "red";} );
       
       drawWarps(detector.grey, detector.candidates, 0, height * 2 + 20);*/
-      
-      
-      if (resetCanvas) {
-          drawCanvas.width = window.innerWidth;
-        drawCanvas.height = window.innerHeight;
-      }
-      drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-      drawContext.drawImage(canvas, 0, 0, drawCanvas.width, drawCanvas.height);
     }
     
     function drawContours(contours, x, y, width, height, fn){
@@ -172,7 +174,7 @@
     function drawWarps(imageSrc, contours, x, y){
       var i = contours.length, j, contour;
       
-      var offset = ( canvas.width - ( (warpImage.width + 10) * contours.length) ) / 2
+      var offset = 10;
       while(i --){
         contour = contours[i];
         
