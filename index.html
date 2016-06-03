@@ -1,0 +1,262 @@
+<html>
+
+<head>
+  <title>ARGameChef</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script type="text/javascript" src="libs/polyfill.js"></script> 
+  
+  <script type="text/javascript" src="bower_components/js-aruco/src/cv.js"></script> 
+  <script type="text/javascript" src="bower_components/js-aruco/src/aruco.js"></script> 
+
+  <script>
+    var camera, canvas, context, imageData, pixels, detector;
+    var debugImage, warpImage, homographyImage;
+    var drawCanvas, drawContext, resetCanvas;
+
+    function onLoad(){
+      camera = document.getElementById("video");
+      
+      drawCanvas = document.getElementById("drawCanvas");
+      drawContext = drawCanvas.getContext("2d");
+      
+      canvas = document.createElement("canvas");
+      context = canvas.getContext("2d");
+      
+      canvas.width = camera.width = 320;
+      canvas.height = camera.height = 240;
+      
+      drawCanvas.width = window.innerWidth;
+      drawCanvas.height = window.innerHeight;
+      
+      navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+      if (navigator.getUserMedia){
+        
+        function successCallback(stream){
+          if (window.webkitURL) {
+            video.src = window.webkitURL.createObjectURL(stream);
+          } else if (video.mozSrcObject !== undefined) {
+            video.mozSrcObject = stream;
+          } else {
+            video.src = stream;
+          }
+        }
+        
+        function errorCallback(error){
+        }
+        
+        var requestLastMedia = true;
+        if (requestLastMedia) {
+            MediaStreamTrack.getSources(function(sourceInfos) {
+              var audioSource = null;
+              var videoSource = null;
+            
+              for (var i = 0; i != sourceInfos.length; ++i) {
+                var sourceInfo = sourceInfos[i];
+                if (sourceInfo.kind === 'audio') {
+                  console.log(sourceInfo.id, sourceInfo.label || 'microphone');
+            
+                  audioSource = sourceInfo.id;
+                } else if (sourceInfo.kind === 'video') {
+                  console.log(sourceInfo.id, sourceInfo.label || 'camera');
+            
+                  videoSource = sourceInfo.id;
+                } else {
+                  console.log('Some other kind of source: ', sourceInfo);
+                }
+              }
+            
+              sourceSelected(audioSource, videoSource);
+            });
+            
+            
+            function sourceSelected(audioSource, videoSource) {
+              var constraints = {
+                /*audio: {
+                  optional: [{sourceId: audioSource}]
+                },*/
+                video: {
+                  optional: [{sourceId: videoSource}]
+                }
+              };
+            
+              navigator.getUserMedia(constraints, successCallback, errorCallback);
+            }
+        } else {
+            navigator.getUserMedia({video:true}, successCallback, errorCallback);    
+        }
+      
+        
+        
+        imageData = context.getImageData(0, 0, camera.width, camera.height);
+        pixels = [];
+        detector = new AR.Detector();
+        
+        debugImage = context.createImageData(camera.width, camera.height);
+        warpImage = context.createImageData(49, 49);
+        homographyImage = new CV.Image();
+        
+        window.addEventListener('orientationchange', updateOrientation, false);
+
+        function updateOrientation() {
+            resetCanvas = true;
+        }
+        
+        
+        requestAnimationFrame(tick);
+      }
+    }
+
+    function tick(){
+      requestAnimationFrame(tick);
+      
+      if (video.readyState === video.HAVE_ENOUGH_DATA){
+        snapshot();
+
+        var markers = detector.detect(imageData);
+        drawDebug();
+        drawCorners(markers);
+        drawId(markers);
+      }
+    }
+
+    function snapshot(){
+      context.drawImage(video, 0, 0, camera.width, camera.height);
+      imageData = context.getImageData(0, 0, camera.width, camera.height);
+    }
+          
+    function drawDebug(){
+      var width = camera.width, height = camera.height;
+      
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      
+      /*context.putImageData(imageData, 0, 0);
+      context.putImageData( createImage(detector.grey, debugImage), width, 0);
+      context.putImageData( createImage(detector.thres, debugImage), width * 2, 0);
+      */
+      drawContours(detector.contours, 0, 0, width, height, function(hole) {return hole? "magenta": "blue";});
+      /*drawContours(detector.polys, width, height, width, height, function() {return "green";} );
+      drawContours(detector.candidates, width * 2, height, width, height, function() {return "red";} );
+      
+      drawWarps(detector.grey, detector.candidates, 0, height * 2 + 20);*/
+      
+      
+      if (resetCanvas) {
+          drawCanvas.width = window.innerWidth;
+        drawCanvas.height = window.innerHeight;
+      }
+      drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+      drawContext.drawImage(canvas, 0, 0, drawCanvas.width, drawCanvas.height);
+    }
+    
+    function drawContours(contours, x, y, width, height, fn){
+      var i = contours.length, j, contour, point;
+      
+      while(i --){
+        contour = contours[i];
+
+        context.strokeStyle = fn(contour.hole);
+        context.beginPath();
+
+        for (j = 0; j < contour.length; ++ j){
+          point = contour[j];
+          this.context.moveTo(x + point.x, y + point.y);
+          point = contour[(j + 1) % contour.length];
+          this.context.lineTo(x + point.x, y + point.y);
+        }
+        
+        context.stroke();
+        context.closePath();
+      }
+    }
+    
+    function drawWarps(imageSrc, contours, x, y){
+      var i = contours.length, j, contour;
+      
+      var offset = ( canvas.width - ( (warpImage.width + 10) * contours.length) ) / 2
+      while(i --){
+        contour = contours[i];
+        
+        CV.warp(imageSrc, homographyImage, contour, warpImage.width);
+        this.context.putImageData( createImage(homographyImage, warpImage), offset + i * (warpImage.width + 10), y);
+        
+        CV.threshold(homographyImage, homographyImage, CV.otsu(homographyImage) );
+        this.context.putImageData( createImage(homographyImage, warpImage), offset + i * (warpImage.width + 10), y + 60);
+      }
+    }
+    
+    function drawCorners(markers){
+      var corners, corner, i, j;
+    
+      context.lineWidth = 3;
+
+      for (i = 0; i !== markers.length; ++ i){
+        corners = markers[i].corners;
+        
+        context.strokeStyle = "red";
+        context.beginPath();
+        
+        for (j = 0; j !== corners.length; ++ j){
+          corner = corners[j];
+          context.moveTo(corner.x, corner.y);
+          corner = corners[(j + 1) % corners.length];
+          context.lineTo(corner.x, corner.y);
+        }
+
+        context.stroke();
+        context.closePath();
+        
+        context.strokeStyle = "green";
+        context.strokeRect(corners[0].x - 2, corners[0].y - 2, 4, 4);
+      }
+    }
+
+    function drawId(markers){
+      var corners, corner, x, y, i, j;
+      
+      context.strokeStyle = "blue";
+      context.lineWidth = 1;
+      
+      for (i = 0; i !== markers.length; ++ i){
+        corners = markers[i].corners;
+        
+        x = Infinity;
+        y = Infinity;
+        
+        for (j = 0; j !== corners.length; ++ j){
+          corner = corners[j];
+          
+          x = Math.min(x, corner.x);
+          y = Math.min(y, corner.y);
+        }
+
+        context.strokeText(markers[i].id, x, y)
+      }
+    }
+
+    function createImage(src, dst){
+      var i = src.data.length, j = (i * 4) + 3;
+      
+      while(i --){
+        dst.data[j -= 4] = 255;
+        dst.data[j - 1] = dst.data[j - 2] = dst.data[j - 3] = src.data[i];
+      }
+      
+      return dst;
+    };
+
+  window.onload = onLoad;
+
+  </script>
+
+</head>
+
+<body style="font-family: monospace;">
+
+  <center>
+    <video id="video" autoplay="true" style="width:320px; height:240px; display:none;"></video>
+    <canvas id="drawCanvas"></canvas>
+  </center>
+
+</body>
+  
+</html>

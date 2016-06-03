@@ -1,0 +1,26 @@
+{
+  "name": "ARGameChef",
+  "authors": [
+    "Vincent Carluer <vcarluer@gmail.com>"
+  ],
+  "description": "Augmented Reality for Game Chef",
+  "main": "index.html",
+  "keywords": [
+    "Augmented",
+    "Reality",
+    "Game",
+    "Chef"
+  ],
+  "license": "MIT",
+  "homepage": "http://www.gamersassociate.com",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "js-aruco": "*"
+  }
+}
