@@ -21,6 +21,8 @@
     "tests"
   ],
   "dependencies": {
-    "js-aruco": "*"
+    "js-aruco": "*",
+    "three.js": "threejs#*",
+    "js-polyfills": "polyfills#^0.1.20"
   }
 }

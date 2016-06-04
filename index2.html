@@ -15,11 +15,12 @@
 
   <script>
     var video, canvas, context, imageData, detector, posit;
-    var renderer1, renderer2, renderer3;
-    var scene1, scene2, scene3, scene4;
-    var camera1, camera2, camera3, camera4;
-    var plane1, plane2, model, texture;
+    var renderer3;
+    var scene3, scene4;
+    var camera3, camera4;
+    var model, texture;
     var step = 0.0;
+    var resetOrientation;
 
     var modelSize = 35.0; //millimeters
 
@@ -38,8 +39,7 @@
     };
     
     function init(){
-      navigator.getUserMedia({video:true}, 
-        function (stream){
+      function successCallback(stream){
           if (window.webkitURL) {
             video.src = window.webkitURL.createObjectURL(stream);
           } else if (video.mozSrcObject !== undefined) {
@@ -47,16 +47,64 @@
           } else {
             video.src = stream;
           }
-        },
-        function(error){
         }
-      );
+        
+        function errorCallback(error){
+        }
+        
+        var requestLastMedia = true;
+        if (requestLastMedia) {
+            MediaStreamTrack.getSources(function(sourceInfos) {
+              var audioSource = null;
+              var videoSource = null;
+            
+              for (var i = 0; i != sourceInfos.length; ++i) {
+                var sourceInfo = sourceInfos[i];
+                if (sourceInfo.kind === 'audio') {
+                  console.log(sourceInfo.id, sourceInfo.label || 'microphone');
+            
+                  audioSource = sourceInfo.id;
+                } else if (sourceInfo.kind === 'video') {
+                  console.log(sourceInfo.id, sourceInfo.label || 'camera');
+            
+                  videoSource = sourceInfo.id;
+                } else {
+                  console.log('Some other kind of source: ', sourceInfo);
+                }
+              }
+            
+              sourceSelected(audioSource, videoSource);
+            });
+            
+            
+            function sourceSelected(audioSource, videoSource) {
+              var constraints = {
+                /*audio: {
+                  optional: [{sourceId: audioSource}]
+                },*/
+                video: {
+                  optional: [{sourceId: videoSource}]
+                }
+              };
+            
+              navigator.getUserMedia(constraints, successCallback, errorCallback);
+            }
+        } else {
+            navigator.getUserMedia({video:true}, successCallback, errorCallback);    
+        }
+      
       
       detector = new AR.Detector();
       posit = new POS.Posit(modelSize, canvas.width);
 
       createRenderers();
       createScenes();
+      
+      window.addEventListener('orientationchange', updateOrientation, false);
+
+        function updateOrientation() {
+            resetOrientation = true;
+        }
 
       requestAnimationFrame(tick);
     };
@@ -66,6 +114,10 @@
       
       if (video.readyState === video.HAVE_ENOUGH_DATA){
         snapshot();
+        
+        if (resetOrientation) {
+          renderer3.setSize(window.innerWidth, window.innerHeight);
+        }
 
         var markers = detector.detect(imageData);
         drawCorners(markers);
@@ -107,25 +159,9 @@
     };
 
     function createRenderers(){
-      renderer1 = new THREE.WebGLRenderer();
-      renderer1.setClearColor(0xffff00, 1);
-      renderer1.setSize(canvas.width, canvas.height);
-      document.getElementById("container1").appendChild(renderer1.domElement);
-      scene1 = new THREE.Scene();
-      camera1 = new THREE.PerspectiveCamera(40, canvas.width / canvas.height, 1, 1000);
-      scene1.add(camera1);
-
-      renderer2 = new THREE.WebGLRenderer();
-      renderer2.setClearColor(0xffff00, 1);
-      renderer2.setSize(canvas.width, canvas.height);
-      document.getElementById("container2").appendChild(renderer2.domElement);
-      scene2 = new THREE.Scene();
-      camera2 = new THREE.PerspectiveCamera(40, canvas.width / canvas.height, 1, 1000);
-      scene2.add(camera2);
-
       renderer3 = new THREE.WebGLRenderer();
       renderer3.setClearColor(0xffffff, 1);
-      renderer3.setSize(canvas.width, canvas.height);
+      renderer3.setSize(window.innerWidth, window.innerHeight);
       document.getElementById("container").appendChild(renderer3.domElement);
       
       scene3 = new THREE.Scene();
@@ -138,12 +174,6 @@
     };
 
     function render(){
-      renderer1.clear();
-      renderer1.render(scene1, camera1);
-      
-      renderer2.clear();
-      renderer2.render(scene2, camera2);
-
       renderer3.autoClear = false;
       renderer3.clear();
       renderer3.render(scene3, camera3);
@@ -151,28 +181,11 @@
     };
 
     function createScenes(){
-      plane1 = createPlane();
-      scene1.add(plane1);
-
-      plane2 = createPlane();
-      scene2.add(plane2);
-      
       texture = createTexture();
       scene3.add(texture);
     
       model = createModel();
       scene4.add(model);
-    };
-    
-    function createPlane(){
-      var object = new THREE.Object3D(),
-          geometry = new THREE.PlaneGeometry(1.0, 1.0, 0.0),
-          material = new THREE.MeshNormalMaterial(),
-          mesh = new THREE.Mesh(geometry, material);
-      
-      object.add(mesh);
-      
-      return object;
     };
     
     function createTexture(){
@@ -216,13 +229,8 @@
         
         pose = posit.pose(corners);
         
-        updateObject(plane1, pose.bestRotation, pose.bestTranslation);
-        updateObject(plane2, pose.alternativeRotation, pose.alternativeTranslation);
         updateObject(model, pose.bestRotation, pose.bestTranslation);
 
-        updatePose("pose1", pose.bestError, pose.bestRotation, pose.bestTranslation);
-        updatePose("pose2", pose.alternativeError, pose.alternativeRotation, pose.alternativeTranslation);
-        
         step += 0.025;
         
         model.rotation.z -= step;
@@ -270,26 +278,12 @@
 <body style="text-align: center; font-family: monospace;">
 
   <video id="video" width=320 height=240 autoplay="true" style="display:none;"></video>
-  
-  <div style="margin: 10px;"><strong>-= Augmented Reality =-</strong></div>
   <div style="width: 100%;">
-    <div style="width: 650px; margin-left:auto; margin-right:auto;">
-      <canvas id="canvas" style="width: 320px; height: 240px; float: left; border: solid 1px black;"></canvas>
-      <div id="container" style="width: 320px; height: 240px; float: left; border: solid 1px black; background: green;"></div>
-      <div style="clear: both;"></div>
-      <div style="float: left; border: solid 1px black;">
-        <div id="container1" style="width: 320px; height: 240px; background: red;"></div>
-        <div id="pose1"></div>
-      </div>
-      <div style="float: left; border: solid 1px black;">
-        <div id="container2" style="width: 320px; height: 240px; background: blue;"></div>
-        <div id="pose2"></div>
-      </div>
+    <div style="width: 100%; margin-left:auto; margin-right:auto;">
+      <canvas id="canvas" style="width: 320px; height: 240px; float: left; border: solid 1px black;display:none;"></canvas>
+      <div id="container" style="width: 100%; height: 100%; float: left; border: solid 1px black; background: green;"></div>
     </div>
   </div>
-  <div style="clear: both;"></div>
-  <div style="margin: 15px;"><strong>Powered by <a href="http://code.google.com/p/js-aruco/">js-aruco</a> and <a href="https://github.com/mrdoob/three.js">Three.js</a></strong></div>
-
 </body>
   
 </html>
