@@ -44,7 +44,7 @@
         function errorCallback(error){
         }
         
-        var requestLastMedia = true;
+        var requestLastMedia = false;
         if (requestLastMedia) {
             MediaStreamTrack.getSources(function(sourceInfos) {
               var audioSource = null;
@@ -137,7 +137,8 @@
       context.clearRect(0, 0, canvas.width, canvas.height);
       
       // context.putImageData( createImage(detector.thres, debugImage), 0, 0);
-      drawContours(detector.contours, 0, 0, width, height, function(hole) {return hole? "magenta": "blue";});
+      // drawContours(detector.contours, 0, 0, width, height, function(hole) {return hole? "magenta": "blue";});
+      context.putImageData( createImage(detector.thres, debugImage), 0, 0);
       
       /*context.putImageData(imageData, 0, 0);
       context.putImageData( createImage(detector.grey, debugImage), width, 0);
@@ -148,7 +149,25 @@
       drawContours(detector.candidates, width * 2, height, width, height, function() {return "red";} );
       
       drawWarps(detector.grey, detector.candidates, 0, height * 2 + 20);*/
+      
+      if (red < 99) {
+        red++;
+      }
+      var redStr = "00";
+      if (red < 10) {
+        redStr = "0" + red
+      } else {
+        redStr = red;
+      }
+      
+      context.font = '60pt Calibri';
+      context.lineWidth = 3;
+      context.strokeStyle = "#" + redStr + "0000";
+    
+      context.strokeText("Pouvoir", 25, 70);
     }
+    
+    var red = 0;
     
     function drawContours(contours, x, y, width, height, fn){
       var i = contours.length, j, contour, point;
