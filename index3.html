@@ -205,7 +205,7 @@
       var texture = new THREE.Texture(canvasEffect),
           object = new THREE.Object3D(),
           geometry = new THREE.PlaneGeometry(1.0, 1.0, 0.0),
-          material = new THREE.MeshBasicMaterial( {map: texture, depthTest: false, depthWrite: false} ),
+          material = new THREE.MeshBasicMaterial( {map: texture, depthTest: false, depthWrite: false, color: 0xffffff, transparent: true} ),
           mesh = new THREE.Mesh(geometry, material);
       
       object.position.z = -1;
@@ -283,8 +283,8 @@
       
       // video plane
       contextEffect.clearRect(0, 0, canvasEffect.width, canvasEffect.height);
-      contextEffect.putImageData( createImage(detector.thres, debugImage), 0, 0);
-      // drawContours(detector.contours, 0, 0, canvas.width, canvas.height, function(hole) {return hole? "magenta": "blue";});
+      // contextEffect.putImageData( createImage(detector.thres, debugImage), 0, 0);
+      drawContours(detector.contours, 0, 0, canvas.width, canvas.height, function(hole) {return hole? "magenta": "blue";});
       
       if (markers.length > 0){
         corners = markers[0].corners;
