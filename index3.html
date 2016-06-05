@@ -14,13 +14,14 @@
   
 
   <script>
-    var video, canvas, context, imageData, detector, posit;
+    var video, canvas, context, imageData, detector, posit, debugImage, canvasEffect, contextEffect;
     var renderer3;
     var scene3, scene4;
     var camera3, camera4;
     var models = [], texture;
     var step = 0.0, stepRotation = 0.0;
     var resetOrientation;
+    var objectMargin = 57;
     var objectCount = 3;
     var moveSpeed = 1;
     var modelSize = 35.0; //millimeters
@@ -29,9 +30,16 @@
       video = document.getElementById("video");
       canvas = document.getElementById("canvas");
       context = canvas.getContext("2d");
-    
+      
       canvas.width = parseInt(canvas.style.width);
       canvas.height = parseInt(canvas.style.height);
+      
+      canvasEffect = document.createElement("canvas");
+      contextEffect = canvasEffect.getContext("2d");
+      canvasEffect.width = canvas.width;
+      canvasEffect.height = canvas.height;
+      
+    
       
       navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
       if (navigator.getUserMedia){
@@ -97,6 +105,7 @@
       
       detector = new AR.Detector();
       posit = new POS.Posit(modelSize, canvas.width);
+      debugImage = context.createImageData(canvas.width, canvas.height);
 
       createRenderers();
       createScenes();
@@ -193,7 +202,7 @@
     };
     
     function createTexture(){
-      var texture = new THREE.Texture(video),
+      var texture = new THREE.Texture(canvasEffect),
           object = new THREE.Object3D(),
           geometry = new THREE.PlaneGeometry(1.0, 1.0, 0.0),
           material = new THREE.MeshBasicMaterial( {map: texture, depthTest: false, depthWrite: false} ),
@@ -272,6 +281,11 @@
     function updateScenes(markers){
       var corners, corner, pose, i;
       
+      // video plane
+      contextEffect.clearRect(0, 0, canvasEffect.width, canvasEffect.height);
+      contextEffect.putImageData( createImage(detector.thres, debugImage), 0, 0);
+      // drawContours(detector.contours, 0, 0, canvas.width, canvas.height, function(hole) {return hole? "magenta": "blue";});
+      
       if (markers.length > 0){
         corners = markers[0].corners;
         
@@ -320,7 +334,7 @@
       
       texture.children[0].material.map.needsUpdate = true;
     };
-    var objectMargin = 57;
+    
     function updateObject(object, rotation, translation, index){
       object.scale.x = modelSize;
       object.scale.y = modelSize;
@@ -351,6 +365,38 @@
                   + " pitch: " + Math.round(-pitch * 180.0/Math.PI)
                   + " roll: " + Math.round(roll * 180.0/Math.PI);
     };
+    
+    function createImage(src, dst){
+      var i = src.data.length, j = (i * 4) + 3;
+      
+      while(i --){
+        dst.data[j -= 4] = 255;
+        dst.data[j - 1] = dst.data[j - 2] = dst.data[j - 3] = src.data[i];
+      }
+      
+      return dst;
+    };
+    
+    function drawContours(contours, x, y, width, height, fn){
+      var i = contours.length, j, contour, point;
+      
+      while(i --){
+        contour = contours[i];
+
+        contextEffect.strokeStyle = fn(contour.hole);
+        contextEffect.beginPath();
+
+        for (j = 0; j < contour.length; ++ j){
+          point = contour[j];
+          contextEffect.moveTo(x + point.x, y + point.y);
+          point = contour[(j + 1) % contour.length];
+          contextEffect.lineTo(x + point.x, y + point.y);
+        }
+        
+        contextEffect.stroke();
+        contextEffect.closePath();
+      }
+    }
 
     window.onload = onLoad;
   </script>
@@ -359,7 +405,7 @@
 
 <body style="text-align: center; font-family: monospace;margin:0">
 
-  <video id="video" width=240 height=320 autoplay="true" style="display:none;"></video>
+  <video id="video" width=320 height=240 autoplay="true" style="display:none;"></video>
   <div style="width: 100%;">
     <div style="width: 100%; margin:0;">
       <canvas id="canvas" style="width: 320px; height: 240px; float: left; border: solid 1px black;display:none;"></canvas>
