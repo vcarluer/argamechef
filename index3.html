@@ -25,6 +25,7 @@
     var objectCount = 3;
     var moveSpeed = 1;
     var modelSize = 35.0; //millimeters
+    var alpha = 0;
 
     function onLoad(){
       video = document.getElementById("video");
@@ -270,7 +271,7 @@
           }
           
           var color = '#'+colorRand.toString(16);
-          material = new THREE.MeshBasicMaterial( { color: color, envMap: cube, refractionRatio: 0.98 } );
+          material = new THREE.MeshBasicMaterial( { color: color, envMap: cube, refractionRatio: 0.98, opacity: 0.9, transparent: true } );
           mesh = new THREE.Mesh(geometry, material);
       
       object.add(mesh);
@@ -285,6 +286,19 @@
       contextEffect.clearRect(0, 0, canvasEffect.width, canvasEffect.height);
       // contextEffect.putImageData( createImage(detector.thres, debugImage), 0, 0);
       drawContours(detector.contours, 0, 0, canvas.width, canvas.height, function(hole) {return hole? "magenta": "blue";});
+      
+      // Write text
+      if (alpha <= 1) {
+        alpha += 0.01;
+      }
+      
+      var text = "Pouvoir";
+      contextEffect.font = (canvas.width / text.length).toString() +  'pt Calibri';
+      contextEffect.lineWidth = 3;
+      contextEffect.strokeStyle = "#0000FF";
+      contextEffect.globalAlpha = alpha;
+      contextEffect.strokeText("Pouvoir", 25, 70);
+      contextEffect.globalAlpha = 1;
       
       if (markers.length > 0){
         corners = markers[0].corners;
