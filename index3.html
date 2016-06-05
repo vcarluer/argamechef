@@ -18,10 +18,11 @@
     var renderer3;
     var scene3, scene4;
     var camera3, camera4;
-    var model, texture;
-    var step = 0.0;
+    var models = [], texture;
+    var step = 0.0, stepRotation = 0.0;
     var resetOrientation;
-
+    var objectCount = 3;
+    var moveSpeed = 1;
     var modelSize = 35.0; //millimeters
 
     function onLoad(){
@@ -169,7 +170,7 @@
       scene3.add(camera3);
       
       scene4 = new THREE.Scene();
-      camera4 = new THREE.PerspectiveCamera(60, canvas.width / canvas.height, 1, 1000);
+      camera4 = new THREE.PerspectiveCamera(90, canvas.width / canvas.height, 1, 1000);
       scene4.add(camera4);
     };
 
@@ -184,9 +185,11 @@
       texture = createTexture();
       scene3.add(texture);
     
-    createModel();
-      model = createModel();
-      scene4.add(model);
+      for (var i = 0; i < objectCount; i++) {
+        var model = createModel();
+        models.push(model);
+        scene4.add(model);
+      }
     };
     
     function createTexture(){
@@ -204,52 +207,64 @@
     };
     
     function createModel(){
-      var r = "textures/cube/castle/";
-				var urls = [
+      var loader = new THREE.CubeTextureLoader();
+      var r, urls;
+      r = "textures/cube/knife/";
+				urls = [
+					r + "nx.jpg", r + "nx.jpg",
+					r + "nx.jpg", r + "nx.jpg",
+					r + "nx.jpg", r + "nx.jpg"
+				];
+      var textureCube1 = new THREE.CubeTextureLoader().load( urls );
+      textureCube1.mapping = THREE.CubeRefractionMapping;
+      
+      r = "textures/cube/castle/";
+				urls = [
 					r + "px.jpg", r + "nx.jpg",
 					r + "py.jpg", r + "ny.jpg",
 					r + "pz.jpg", r + "nz.jpg"
 				];
-      var loader = new THREE.CubeTextureLoader();
-/*      loader.setPath( 'textures/cube/castle/' );
+      var textureCube2 = new THREE.CubeTextureLoader().load( urls );
+      textureCube2.mapping = THREE.CubeRefractionMapping;
       
-      var textureCube = loader.load( [
-      	'px.png', 'nx.png',
-      	'py.png', 'ny.png',
-      	'pz.png', 'nz.png'
-      ] );*/
-      var textureCube = new THREE.CubeTextureLoader().load( urls );
       
-      textureCube.mapping = THREE.CubeRefractionMapping;
-      
-      var object = new THREE.Object3D(),
-          // geometry = new THREE.SphereGeometry(0.5, 15, 15, Math.PI),
-          // geometry = new THREE.BoxGeometry(1.0, 1.0, 1.0),
-          geometry = new THREE.TorusKnotGeometry( 1, 0.3, 100, 16 ),
-          // texture = THREE.ImageUtils.loadTexture("textures/earth.jpg"),
-          material = new THREE.MeshBasicMaterial( { color: 0x2194ce, envMap: textureCube, refractionRatio: 0.98 } ),
+      var object, geometry, material, mesh;
+          object = new THREE.Object3D();
+          
+          var geomPick = Math.floor(Math.random() * 3);
+          switch (geomPick) {
+            case 0: 
+                geometry = new THREE.BoxGeometry(1.0, 1.0, 1.0);
+                break;
+            case 1:
+                geometry = new THREE.TorusKnotBufferGeometry( 0.4, 0.15, 100, 16 );
+                break;
+            case 2:
+                geometry = new THREE.SphereBufferGeometry( 0.8, 8, 6 );
+                break;
+          }
+          
+          var cubePick = Math.floor(Math.random() * 2);
+          var cube;
+          switch (cubePick) {
+            case 0:
+              cube = textureCube1;
+              break;
+            case 1:
+              cube = textureCube2;
+              break;
+          }
+          
+          var colorRand = Math.floor(Math.random()*16777215);
+          if (colorRand < 10000) {
+            colorRand = 10000;
+          }
+          
+          var color = '#'+colorRand.toString(16);
+          material = new THREE.MeshBasicMaterial( { color: color, envMap: cube, refractionRatio: 0.98 } );
           mesh = new THREE.Mesh(geometry, material);
       
       object.add(mesh);
-      
-      /*var loader = new THREE.JSONLoader();          
-      
-      loader.load( "models/untitled.json", function(geometry,materials) {
-          var texture = THREE.ImageUtils.loadTexture("textures/earth.jpg"),
-          material = new THREE.MeshBasicMaterial( {map: texture} );
-          // material = new THREE.MeshFaceMaterial( materials );
-          model = new THREE.Mesh(geometry,material);
-          /*model.scale.set(0.1,0.1,0.1);
-          model.position.x=0;
-          model.position.y=0;
-          model.position.z=0;*/
-      /*    
-          scene4.add(model);
-      });
-      
-      loader.onLoadComplete=function(){ //render
-        // scene4.add(model);
-      }*/
       
       return object;
     };
@@ -268,21 +283,45 @@
         }
         
         pose = posit.pose(corners);
+        step += moveSpeed;
+        stepRotation += 0.005;
         
-        updateObject(model, pose.bestRotation, pose.bestTranslation);
-        console.log(pose.bestRotation, pose.bestRotation);
-
-        step += 0.005;
+        for (var i = 0; i < models.length; i++) {
+          var model = models[i];
+          updateObject(model, pose.bestRotation, pose.bestTranslation, i);
+          model.rotation.z -= stepRotation;
+          model.rotation.y -= stepRotation;
+          model.position.x -= step;
+        }
         
-        model.rotation.z -= step;
+        if (step % objectMargin + moveSpeed >= objectMargin) {
+           var model = createModel();
+            models.push(model);
+            scene4.add(model);
+        }
       } else {
         // updateObject(model, [[1, 0, 0],[0, 1, 0], [0, 0, 1]], [[1, 0, 0],[0, 1, 0], [0, 0, 1]]);
+        step += moveSpeed;
+        stepRotation += 0.005;
+        for (var i = 0; i < models.length; i++) {
+          var model = models[i];
+          updateObject(model, [[0, 0, 0],[0, 0, 0], [0, 0, 0]], [-100, 1, 100], i);
+          model.rotation.z -= stepRotation;
+          model.rotation.y -= stepRotation;
+          model.position.x -= step;
+        }
+        
+        if (step % objectMargin + moveSpeed >= objectMargin) {
+           var model = createModel();
+            models.push(model);
+            scene4.add(model);
+        }
       }
       
       texture.children[0].material.map.needsUpdate = true;
     };
-    
-    function updateObject(object, rotation, translation){
+    var objectMargin = 57;
+    function updateObject(object, rotation, translation, index){
       object.scale.x = modelSize;
       object.scale.y = modelSize;
       object.scale.z = modelSize;
@@ -291,7 +330,7 @@
       object.rotation.y = -Math.atan2(rotation[0][2], rotation[2][2]);
       object.rotation.z = Math.atan2(rotation[1][0], rotation[1][1]);
 
-      object.position.x = translation[0];
+      object.position.x = translation[0] + index * objectMargin;
       object.position.y = translation[1];
       object.position.z = -translation[2];
     };
