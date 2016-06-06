@@ -1,0 +1,485 @@
+<html>
+
+<head>
+  <title>ARGameChef</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <script type="text/javascript" src="bower_components/js-polyfills/web.min.js"></script> 
+  <script type="text/javascript" src="bower_components/three.js/build/three.min.js"></script> 
+  
+  <script type="text/javascript" src="bower_components/js-aruco/src/svd.js"></script>
+  <script type="text/javascript" src="bower_components/js-aruco/src/posit1.js"></script>
+  <script type="text/javascript" src="bower_components/js-aruco/src/cv.js"></script> 
+  <script type="text/javascript" src="bower_components/js-aruco/src/aruco.js"></script>
+  
+  <script type="text/javascript" src="bower_components/reqwest/reqwest.min.js"></script> 
+  
+
+  <script>
+    var video, canvas, context, imageData, detector, posit, debugImage, canvasEffect, contextEffect;
+    var renderer3;
+    var scene3, scene4;
+    var camera3, camera4;
+    var models = [], texture;
+    var step = 0.0, stepRotation = 0.0;
+    var resetOrientation;
+    var objectMargin = 57;
+    var objectCount = 3;
+    var moveSpeed = 1;
+    var modelSize = 35.0; //millimeters
+    var alpha = 0;
+
+    function onLoad(){
+      video = document.getElementById("video");
+      canvas = document.getElementById("canvas");
+      context = canvas.getContext("2d");
+      
+      canvas.width = parseInt(canvas.style.width);
+      canvas.height = parseInt(canvas.style.height);
+      
+      canvasEffect = document.createElement("canvas");
+      contextEffect = canvasEffect.getContext("2d");
+      canvasEffect.width = canvas.width;
+      canvasEffect.height = canvas.height;
+      
+    
+      
+      navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+      if (navigator.getUserMedia){
+        init();
+      }
+    };
+    
+    function init(){
+      reqwest({
+          url: 'https://backend.deviantart.com/rss.xml?type=deviation&q=horror+place',
+          method: 'get',
+          type: 'xml',
+          crossOrigin: true,
+          success: function (resp) {
+            console.log(resp);
+            console.log(resp.evaluate("/rss/channel/item/media:content/", resp, null, XPathResult.ANY_TYPE,null));
+          }
+      });
+      /*
+      var image = new Image();
+      image.onload = function() {
+        console.log(image);
+      }
+      
+      image.src = "https://pre08.deviantart.net/a5f3/th/pre/i/2013/269/9/7/my_whispers_of_horror_by_pikminaaa-d6o0jsx.png";*/
+      
+      //return;
+      function successCallback(stream){
+          if (window.webkitURL) {
+            video.src = window.webkitURL.createObjectURL(stream);
+          } else if (video.mozSrcObject !== undefined) {
+            video.mozSrcObject = stream;
+          } else {
+            video.src = stream;
+          }
+        }
+        
+        function errorCallback(error){
+        }
+        
+        var requestLastMedia = true;
+        if (requestLastMedia) {
+            MediaStreamTrack.getSources(function(sourceInfos) {
+              var audioSource = null;
+              var videoSource = null;
+            
+              for (var i = 0; i != sourceInfos.length; ++i) {
+                var sourceInfo = sourceInfos[i];
+                if (sourceInfo.kind === 'audio') {
+                  console.log(sourceInfo.id, sourceInfo.label || 'microphone');
+            
+                  audioSource = sourceInfo.id;
+                } else if (sourceInfo.kind === 'video') {
+                  console.log(sourceInfo.id, sourceInfo.label || 'camera');
+            
+                  videoSource = sourceInfo.id;
+                } else {
+                  console.log('Some other kind of source: ', sourceInfo);
+                }
+              }
+            
+              sourceSelected(audioSource, videoSource);
+            });
+            
+            
+            function sourceSelected(audioSource, videoSource) {
+              var constraints = {
+                /*audio: {
+                  optional: [{sourceId: audioSource}]
+                },*/
+                video: {
+                  optional: [{sourceId: videoSource}]
+                }
+              };
+            
+              navigator.getUserMedia(constraints, successCallback, errorCallback);
+            }
+        } else {
+            navigator.getUserMedia({video:true}, successCallback, errorCallback);    
+        }
+      
+      
+      detector = new AR.Detector();
+      posit = new POS.Posit(modelSize, canvas.width);
+      debugImage = context.createImageData(canvas.width, canvas.height);
+
+      createRenderers();
+      createScenes();
+      
+      window.addEventListener('orientationchange', updateOrientation, false);
+
+        function updateOrientation() {
+            resetOrientation = true;
+        }
+
+      requestAnimationFrame(tick);
+    };
+
+    function tick(){
+      requestAnimationFrame(tick);
+      
+      if (video.readyState === video.HAVE_ENOUGH_DATA && ready){
+        snapshot();
+        
+        if (resetOrientation) {
+          renderer3.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        var markers = detector.detect(imageData);
+        drawCorners(markers);
+        updateScenes(markers);
+        
+        render();
+      }
+    };
+
+    function snapshot(){
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    };
+    
+    function drawCorners(markers){
+      var corners, corner, i, j;
+    
+      context.lineWidth = 3;
+
+      for (i = 0; i < markers.length; ++ i){
+        corners = markers[i].corners;
+        
+        context.strokeStyle = "red";
+        context.beginPath();
+        
+        for (j = 0; j < corners.length; ++ j){
+          corner = corners[j];
+          context.moveTo(corner.x, corner.y);
+          corner = corners[(j + 1) % corners.length];
+          context.lineTo(corner.x, corner.y);
+        }
+
+        context.stroke();
+        context.closePath();
+        
+        context.strokeStyle = "green";
+        context.strokeRect(corners[0].x - 2, corners[0].y - 2, 4, 4);
+      }
+    };
+
+    function createRenderers(){
+      renderer3 = new THREE.WebGLRenderer();
+      renderer3.setClearColor(0xffffff, 1);
+      renderer3.setSize(window.innerWidth, window.innerHeight);
+      document.getElementById("container").appendChild(renderer3.domElement);
+      
+      scene3 = new THREE.Scene();
+      camera3 = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5);
+      scene3.add(camera3);
+      
+      scene4 = new THREE.Scene();
+      camera4 = new THREE.PerspectiveCamera(90, canvas.width / canvas.height, 1, 1000);
+      scene4.add(camera4);
+    };
+
+    function render(){
+      renderer3.autoClear = false;
+      renderer3.clear();
+      renderer3.render(scene3, camera3);
+      renderer3.render(scene4, camera4);
+    };
+
+    function createScenes(){
+      texture = createTexture();
+      scene3.add(texture);
+    
+      for (var i = 0; i < objectCount; i++) {
+        createModel();
+      }
+    };
+    
+    function createTexture(){
+      var texture = new THREE.Texture(canvasEffect),
+          object = new THREE.Object3D(),
+          geometry = new THREE.PlaneGeometry(1.0, 1.0, 0.0),
+          material = new THREE.MeshBasicMaterial( {map: texture, depthTest: false, depthWrite: false, color: 0xffffff, transparent: true} ),
+          mesh = new THREE.Mesh(geometry, material);
+      
+      object.position.z = -1;
+      
+      object.add(mesh);
+      
+      return object;
+    };
+    
+    function createModel(){
+      
+      /*var loader = new THREE.CubeTextureLoader();
+      loader.crossOrigin = '';
+      var r, urls;
+      r = "textures/cube/knife/";
+				urls = [
+					r + "nx.jpg", r + "nx.jpg",
+					r + "nx.jpg", r + "nx.jpg",
+					r + "nx.jpg", r + "nx.jpg"
+				];
+      var textureCube1 = new THREE.CubeTextureLoader().load( urls );
+      textureCube1.mapping = THREE.CubeRefractionMapping;*/
+      
+      var image = new Image();
+      image.crossOrigin = "";
+      image.onload = function() {
+        // canvImage = document.createElement("canvas");
+        var canvImage = document.getElementById("canvImage");
+        var contImage = canvImage.getContext("2d");
+        var canvImageLoad = document.getElementById("canvImageLoad");
+        var contImageLoad = canvImageLoad.getContext("2d");
+        contImageLoad.drawImage(image, 0, 0);
+        contImage.drawImage(image, 0, 0, image.width, image.height, 0, 0, 512, 512);
+        var data = contImage.getImageData(0, 0, image.width, image.height);
+        var textureCube1 = new THREE.CubeTexture([ data,data,data,data,data,data ]);
+        textureCube1.mapping = THREE.CubeRefractionMapping;
+        textureCube1.needsUpdate = true;
+        
+        
+        /*var r = "https://pre08.deviantart.net/a5f3/th/pre/i/2013/269/9/7/";
+        var urls = [
+  					r + "my_whispers_of_horror_by_pikminaaa-d6o0jsx.png", r + "my_whispers_of_horror_by_pikminaaa-d6o0jsx.png",
+  					r + "my_whispers_of_horror_by_pikminaaa-d6o0jsx.png", r + "my_whispers_of_horror_by_pikminaaa-d6o0jsx.png",
+  					r + "my_whispers_of_horror_by_pikminaaa-d6o0jsx.png", r + "my_whispers_of_horror_by_pikminaaa-d6o0jsx.png"
+  				];
+  			var textureCube1 = loader.load( urls );
+        textureCube1.mapping = THREE.CubeRefractionMapping;*/
+        
+  				
+        var r = "textures/cube/castle/";
+  			var urls = [
+  					r + "px.jpg", r + "nx.jpg",
+  					r + "py.jpg", r + "ny.jpg",
+  					r + "pz.jpg", r + "nz.jpg"
+  				];
+        var textureCube2 = new THREE.CubeTextureLoader().load( urls );
+        textureCube2.mapping = THREE.CubeRefractionMapping;
+        
+        
+        var object, geometry, material, mesh;
+            object = new THREE.Object3D();
+            
+            var geomPick = Math.floor(Math.random() * 3);
+            switch (geomPick) {
+              case 0: 
+                  geometry = new THREE.BoxGeometry(1.0, 1.0, 1.0);
+                  break;
+              case 1:
+                  geometry = new THREE.TorusKnotBufferGeometry( 0.4, 0.15, 100, 16 );
+                  break;
+              case 2:
+                  geometry = new THREE.SphereBufferGeometry( 0.8, 8, 6 );
+                  break;
+            }
+            
+            var cubePick = Math.floor(Math.random() * 2);
+            var cube;
+            switch (cubePick) {
+              case 0:
+                cube = textureCube1;
+                break;
+              case 1:
+                cube = textureCube2;
+                break;
+            }
+            
+            var colorRand = Math.floor(Math.random()*16777215);
+            if (colorRand < 10000) {
+              colorRand = 10000;
+            }
+            
+            var color = '#'+colorRand.toString(16);
+            material = new THREE.MeshBasicMaterial( { color: color, envMap: textureCube1, refractionRatio: 0.98, opacity: 0.9, transparent: true } );
+            mesh = new THREE.Mesh(geometry, material);
+        
+          object.add(mesh);
+        
+        
+          models.push(object);
+          scene4.add(object);
+          
+          ready = true;
+      }
+      
+      image.src = "https://pre08.deviantart.net/a5f3/th/pre/i/2013/269/9/7/my_whispers_of_horror_by_pikminaaa-d6o0jsx.png";
+    };
+    
+    var ready = false;
+
+    function updateScenes(markers){
+      var corners, corner, pose, i;
+      
+      // video plane
+      contextEffect.clearRect(0, 0, canvasEffect.width, canvasEffect.height);
+      // contextEffect.putImageData( createImage(detector.thres, debugImage), 0, 0);
+      drawContours(detector.contours, 0, 0, canvas.width, canvas.height, function(hole) {return hole? "magenta": "blue";});
+      
+      // Write text
+      if (alpha <= 1) {
+        alpha += 0.01;
+      }
+      
+      var text = "Pouvoir";
+      contextEffect.font = (canvas.width / text.length).toString() +  'pt Calibri';
+      contextEffect.lineWidth = 3;
+      contextEffect.strokeStyle = "#0000FF";
+      contextEffect.globalAlpha = alpha;
+      contextEffect.strokeText("Pouvoir", 25, 70);
+      contextEffect.globalAlpha = 1;
+      
+      if (markers.length > 0){
+        corners = markers[0].corners;
+        
+        for (i = 0; i < corners.length; ++ i){
+          corner = corners[i];
+          
+          corner.x = corner.x - (canvas.width / 2);
+          corner.y = (canvas.height / 2) - corner.y;
+        }
+        
+        pose = posit.pose(corners);
+        step += moveSpeed;
+        stepRotation += 0.005;
+        
+        for (var i = 0; i < models.length; i++) {
+          var model = models[i];
+          updateObject(model, pose.bestRotation, pose.bestTranslation, i);
+          model.rotation.z -= stepRotation;
+          model.rotation.y -= stepRotation;
+          model.position.x -= step;
+        }
+        
+        if (step % objectMargin + moveSpeed >= objectMargin) {
+           var model = createModel();
+        }
+      } else {
+        // updateObject(model, [[1, 0, 0],[0, 1, 0], [0, 0, 1]], [[1, 0, 0],[0, 1, 0], [0, 0, 1]]);
+        step += moveSpeed;
+        stepRotation += 0.005;
+        for (var i = 0; i < models.length; i++) {
+          var model = models[i];
+          updateObject(model, [[0, 0, 0],[0, 0, 0], [0, 0, 0]], [-100, 1, 50], i);
+          model.rotation.z -= stepRotation;
+          model.rotation.y -= stepRotation;
+          model.position.x -= step;
+        }
+        
+        if (step % objectMargin + moveSpeed >= objectMargin) {
+           createModel();
+        }
+      }
+      
+      texture.children[0].material.map.needsUpdate = true;
+    };
+    
+    function updateObject(object, rotation, translation, index){
+      object.scale.x = modelSize;
+      object.scale.y = modelSize;
+      object.scale.z = modelSize;
+      
+      object.rotation.x = -Math.asin(-rotation[1][2]);
+      object.rotation.y = -Math.atan2(rotation[0][2], rotation[2][2]);
+      object.rotation.z = Math.atan2(rotation[1][0], rotation[1][1]);
+
+      object.position.x = translation[0] + index * objectMargin;
+      object.position.y = translation[1];
+      object.position.z = -translation[2];
+    };
+    
+    function updatePose(id, error, rotation, translation){
+      var yaw = -Math.atan2(rotation[0][2], rotation[2][2]);
+      var pitch = -Math.asin(-rotation[1][2]);
+      var roll = Math.atan2(rotation[1][0], rotation[1][1]);
+      
+      var d = document.getElementById(id);
+      d.innerHTML = " error: " + error
+                  + "<br/>"
+                  + " x: " + (translation[0] | 0)
+                  + " y: " + (translation[1] | 0)
+                  + " z: " + (translation[2] | 0)
+                  + "<br/>"
+                  + " yaw: " + Math.round(-yaw * 180.0/Math.PI)
+                  + " pitch: " + Math.round(-pitch * 180.0/Math.PI)
+                  + " roll: " + Math.round(roll * 180.0/Math.PI);
+    };
+    
+    function createImage(src, dst){
+      var i = src.data.length, j = (i * 4) + 3;
+      
+      while(i --){
+        dst.data[j -= 4] = 255;
+        dst.data[j - 1] = dst.data[j - 2] = dst.data[j - 3] = src.data[i];
+      }
+      
+      return dst;
+    };
+    
+    function drawContours(contours, x, y, width, height, fn){
+      var i = contours.length, j, contour, point;
+      
+      while(i --){
+        contour = contours[i];
+
+        contextEffect.strokeStyle = fn(contour.hole);
+        contextEffect.beginPath();
+
+        for (j = 0; j < contour.length; ++ j){
+          point = contour[j];
+          contextEffect.moveTo(x + point.x, y + point.y);
+          point = contour[(j + 1) % contour.length];
+          contextEffect.lineTo(x + point.x, y + point.y);
+        }
+        
+        contextEffect.stroke();
+        contextEffect.closePath();
+      }
+    }
+
+    window.onload = onLoad;
+  </script>
+
+</head>
+
+<body style="text-align: center; font-family: monospace;margin:0">
+
+  <video id="video" width=320 height=240 autoplay="true" style="display:none;"></video>
+  <div style="width: 100%;">
+    <div style="width: 100%; margin:0;">
+      <canvas id="canvas" style="width: 320px; height: 240px; float: left; border: solid 1px black;display:none;"></canvas>
+      <div id="container" style="width: 100%; height: 100%; float: left; border: solid 1px black; background: green;"></div>
+    </div>
+  </div>
+  <canvas id="canvImageLoad"></canvas>
+  <canvas id="canvImage"></canvas>
+</body>
+  
+</html>

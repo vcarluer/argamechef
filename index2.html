@@ -240,10 +240,7 @@
     };
     
     function updateObject(object, rotation, translation){
-      object.scale.x = modelSize;
-      object.scale.y = modelSize;
-      object.scale.z = modelSize;
-      
+     
       object.rotation.x = -Math.asin(-rotation[1][2]);
       object.rotation.y = -Math.atan2(rotation[0][2], rotation[2][2]);
       object.rotation.z = Math.atan2(rotation[1][0], rotation[1][1]);
@@ -251,6 +248,14 @@
       object.position.x = translation[0];
       object.position.y = translation[1];
       object.position.z = -translation[2];
+      
+      var scaleRatio= translation[2] /500;
+      var scale = 1/(Math.pow(scaleRatio, 3));
+      
+       object.scale.x = scale;
+      object.scale.y = scale;
+      object.scale.z = scale;
+      
     };
     
     function updatePose(id, error, rotation, translation){
