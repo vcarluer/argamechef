@@ -1,0 +1,99 @@
+<html>
+
+<head>
+  <title>ARGameChef</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script type="text/javascript" src="libs/polyfill.js"></script> 
+  
+  <script type="text/javascript" src="bower_components/js-aruco/src/cv.js"></script> 
+  <script type="text/javascript" src="bower_components/js-aruco/src/aruco.js"></script> 
+
+  <script>
+    function onLoad(){
+      
+      
+      navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+      if (navigator.getUserMedia){
+        
+        function successCallback(stream){
+          if (window.webkitURL) {
+            video1.src = window.webkitURL.createObjectURL(stream);
+          } else if (video.mozSrcObject !== undefined) {
+            video1.mozSrcObject = stream;
+          } else {
+            video1.src = stream;
+          }
+        }
+        
+        function errorCallback(error){
+        }
+        
+        function successCallback2(stream){
+          if (window.webkitURL) {
+            video2.src = window.webkitURL.createObjectURL(stream);
+          } else if (video.mozSrcObject !== undefined) {
+            video2.mozSrcObject = stream;
+          } else {
+            video2.src = stream;
+          }
+        }
+        
+        var requestLastMedia = true;
+        if (requestLastMedia) {
+            MediaStreamTrack.getSources(function(sourceInfos) {
+              var audioSource = null;
+              var videoSource = null;
+            
+              for (var i = 0; i != sourceInfos.length; ++i) {
+                var sourceInfo = sourceInfos[i];
+                if (sourceInfo.kind === 'audio') {
+                  console.log(sourceInfo.id, sourceInfo.label || 'microphone');
+            
+                  audioSource = sourceInfo.id;
+                } else if (sourceInfo.kind === 'video') {
+                  console.log(sourceInfo.id, sourceInfo.label || 'camera');
+            
+                  videoSource = sourceInfo.id;
+                } else {
+                  console.log('Some other kind of source: ', sourceInfo);
+                }
+              }
+            
+              sourceSelected(audioSource, videoSource);
+            });
+            
+            
+            function sourceSelected(audioSource, videoSource) {
+              var constraints = {
+                /*audio: {
+                  optional: [{sourceId: audioSource}]
+                },*/
+                video: {
+                  optional: [{sourceId: videoSource}]
+                }
+              };
+            
+              navigator.getUserMedia(constraints, successCallback, errorCallback);
+            }
+        }
+        
+        navigator.getUserMedia({video:true}, successCallback2, errorCallback); 
+      }
+    }
+
+  window.onload = onLoad;
+
+  </script>
+
+</head>
+
+<body style="font-family: monospace;">
+
+  <center>
+    <video id="video1" autoplay="true" style="width:320px; height:240px;"></video>
+    <video id="video2" autoplay="true" style="width:320px; height:240px;"></video>
+  </center>
+
+</body>
+  
+</html>
