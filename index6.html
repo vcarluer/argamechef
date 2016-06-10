@@ -22,9 +22,9 @@
     var step = 0.0, stepRotation = 0.0;
     var resetOrientation;
     var objectMargin = 57;
-    var objectCount = 3;
+    var objectCount = 1;
     var moveSpeed = 1;
-    var modelSize = 35.0; //millimeters
+    var modelSize = 50; // 35.0; //millimeters
     var alpha = 0;
 
     function onLoad(){
@@ -324,8 +324,8 @@
         }
         
         pose = posit.pose(corners);
-        step += moveSpeed;
-        stepRotation += 0.005;
+        // step += moveSpeed;
+        stepRotation += 0.05;
         
         for (var i = 0; i < models.length; i++) {
           var model = models[i];
@@ -363,15 +363,18 @@
     };
     
     function updateObject(object, rotation, translation, index){
-      object.scale.x = modelSize;
-      object.scale.y = modelSize;
-      object.scale.z = modelSize;
+      var scaleRatio= translation[2] /500;
+      var scale = 1/(Math.pow(scaleRatio, 3));
+      
+      object.scale.x = scale;
+      object.scale.y = scale;
+      object.scale.z = scale;
       
       object.rotation.x = -Math.asin(-rotation[1][2]);
       object.rotation.y = -Math.atan2(rotation[0][2], rotation[2][2]);
       object.rotation.z = Math.atan2(rotation[1][0], rotation[1][1]);
 
-      object.position.x = translation[0] + index * objectMargin;
+      object.position.x = translation[0];
       object.position.y = translation[1];
       object.position.z = -translation[2];
     };
