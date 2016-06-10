@@ -120,6 +120,15 @@
         requestAnimationFrame(tick);
       }
     }
+    
+    var lastPick = 0;
+    var scene2Words = []
+    // var OCSuccess = true;
+    
+    function pickWords() {
+        // OCSuccess = Math.random() * 3 > 1;
+        scene2Words = ['Humidité', 'Vitesse'];
+    }
 
     function tick(){
       requestAnimationFrame(tick);
@@ -130,6 +139,11 @@
         var markers = detector.detect(imageData);
         if (markers && markers.length > 0 && markers[0].id === 200) {
                 if (video2.readyState === video2.HAVE_ENOUGH_DATA){
+                    var current = new Date().getTime();
+                    if (current - lastPick > 5000) {
+                        pickWords();
+                    }
+                    
                       context2.drawImage(video2, 0, 0, camera.width, camera.height);
                       imageData2 = context2.getImageData(0, 0, camera.width, camera.height);
                         var markers2 = detector2.detect(imageData2);
@@ -164,22 +178,22 @@
       
       cont.clearRect(0, 0, canvas.width, canvas.height);
       
-      // context.putImageData( createImage(detector.thres, debugImage), 0, 0);
-      // drawContours(detector.contours, 0, 0, width, height, function(hole) {return hole? "magenta": "blue";});
-      cont.putImageData( createImage(detect.thres, debugImage), 0, 0);
+      // cont.putImageData( createImage(detector.thres, debugImage), 0, 0);
+      drawContours(detect.contours, 0, 0, width, height, function(hole) {return hole? "magenta": "blue";}, cont);
+      // cont.putImageData( createImage(detect.thres, debugImage), 0, 0);
       
       /*context.putImageData(imageData, 0, 0);
-      cont.putImageData( createImage(detector.grey, debugImage), width, 0);
-      cont.putImageData( createImage(detector.thres, debugImage), width * 2, 0);
+      cont.putImageData( createImage(detect.grey, debugImage), width, 0);
+      cont.putImageData( createImage(detect.thres, debugImage), width * 2, 0);
       
-      drawContours(detector.contours, 0, height, width, height, function(hole) {return hole? "magenta": "blue";});
-      drawContours(detector.polys, width, height, width, height, function() {return "green";} );
-      drawContours(detector.candidates, width * 2, height, width, height, function() {return "red";} );
+      drawContours(detect.contours, 0, height, width, height, function(hole) {return hole? "magenta": "blue";});
+      drawContours(detect.polys, width, height, width, height, function() {return "green";} );
+      drawContours(detect.candidates, width * 2, height, width, height, function() {return "red";} );
       
-      drawWarps(detector.grey, detector.candidates, 0, height * 2 + 20);*/
+      drawWarps(detect.grey, detect.candidates, 0, height * 2 + 20);*/
       
-      if (red < 99) {
-        red++;
+      if (red > 0) {
+        red--;
       }
       var redStr = "00";
       if (red < 10) {
@@ -188,33 +202,38 @@
         redStr = red;
       }
       
-      cont.font = '60pt Calibri';
+      cont.font = '25pt Calibri';
       cont.lineWidth = 3;
-      cont.strokeStyle = "#" + redStr + "0000";
+      cont.strokeStyle = "#FF" + redStr + "FF";
     
-      cont.strokeText("Pouvoir", 25, 70);
+        for (var i = 0; i < scene2Words.length; i++) {
+            var word = scene2Words[i];
+            
+            cont.strokeText(word, Math.random() * 100, Math.random() * 100);
+        }
+      
     }
     
-    var red = 0;
+    var red = 99;
     
-    function drawContours(contours, x, y, width, height, fn){
+    function drawContours(contours, x, y, width, height, fn, cont){
       var i = contours.length, j, contour, point;
       
       while(i --){
         contour = contours[i];
 
-        context.strokeStyle = fn(contour.hole);
-        context.beginPath();
+        cont.strokeStyle = fn(contour.hole);
+        cont.beginPath();
 
         for (j = 0; j < contour.length; ++ j){
           point = contour[j];
-          this.context.moveTo(x + point.x, y + point.y);
+          cont.moveTo(x + point.x, y + point.y);
           point = contour[(j + 1) % contour.length];
-          this.context.lineTo(x + point.x, y + point.y);
+          cont.lineTo(x + point.x, y + point.y);
         }
         
-        context.stroke();
-        context.closePath();
+        cont.stroke();
+        cont.closePath();
       }
     }
     
