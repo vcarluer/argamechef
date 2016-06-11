@@ -165,16 +165,16 @@ function createScenes(){
   scene3.add(texture);
   
   models ={};
-  addModel('110', 'place/1.jpg');
-  addModel('120', 'chara/1.jpg');
-  addModel('130', 'chara/2.jpg');
-  addModel('140', 'item/1.jpg');
-  addModel('400', 'chara/3.jpg');
+  addModel('110', 'place/1.jpg', 'cube');
+  addModel('120', 'chara/1.jpg', 'sphere');
+  addModel('130', 'chara/2.jpg', 'sphere');
+  addModel('140', 'item/1.jpg', 'torusKnot');
+  addModel('400', 'chara/3.jpg', 'sphere');
   
 }
 
-function addModel(id, path) {
-  var model = createModel(path);
+function addModel(id, path, type) {
+  var model = createModel(path, type);
   scene4.add(model);
   models[id] = model;
 }
@@ -193,12 +193,35 @@ function createTexture(){
   return object;
 }
 
-function createModel(path){
-  var object = new THREE.Object3D(),
-      geometry = new THREE.SphereGeometry(0.5, 15, 15, Math.PI),
-      texture = THREE.ImageUtils.loadTexture("textures/cube/" + path),
-      material = new THREE.MeshBasicMaterial( {map: texture} ),
-      mesh = new THREE.Mesh(geometry, material);
+function createModel(path, type){
+  var loader = new THREE.CubeTextureLoader();
+      var url = "textures/cube/" + path;
+			var urls = [url, url, url, url, url, url];
+			
+      var textureCube = new THREE.CubeTextureLoader().load( urls );
+      textureCube.mapping = THREE.CubeRefractionMapping;
+  
+  
+  var object = new THREE.Object3D();
+  var geometry;
+  if (!type || type === 'sphere') {
+    geometry = new THREE.SphereBufferGeometry(0.8, 8, 6, Math.PI);  
+  }
+  
+  if (type === 'cube') {
+    geometry = new THREE.BoxBufferGeometry(1.0, 1.0, 1.0);
+  }
+  
+  if (type === 'torusKnot') {
+    geometry = new THREE.TorusKnotBufferGeometry( 0.4, 0.15, 100, 16 ); 
+  }
+  
+  
+  var color = '#ffffff';
+  
+  var material = new THREE.MeshBasicMaterial( { color: color, envMap: textureCube, refractionRatio: 0.95, opacity: 0.9, transparent: true } );
+  
+  var mesh = new THREE.Mesh(geometry, material);
   
   object.add(mesh);
   
@@ -228,6 +251,7 @@ function updateScenes(markers){
         step += 0.025;
         
         model.rotation.z -= step;  
+        model.rotation.y -= step;  
       }
     });
   }
@@ -237,7 +261,7 @@ function updateScenes(markers){
       if ((Date.now() - last) > 500) {
         var model = models[markerId];
         if (model) {
-          model.position.x = -100;
+          model.position.x = -1000;
         }
         
         delete lastDetect[markerId]
