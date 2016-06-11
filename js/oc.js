@@ -12,6 +12,9 @@ var debugImage;
 var drawCanvas, drawContext, resetCanvas;
 var result;
 var headerText, texts;
+var intricationWords = ['Ronronnement','Assourdissant','Sifflement','Crie','Perdu','Bois','Miroir','Eau','Feu','Circulation','Gratte-ciel','Lac','Mer','Montagne','Neige','Verdoyant','Palmier','Glissade','Vélo','Marais','Animal','Tambours','Masques','Costumes','Gare','Horloge','Église','Cimetière','Enfants','Parapluie','Arme','Outils','Drapeau','Parking','Bar','Restaurant','Pétards','Défilé','Attaché','Allongé','Assis','Roulement','Balancer','Saut','Sonné','Murmure','Moteur','Musique','Course','Inquiétude','Poursuite','Peur','Recherche','Conversations','Réception','Cuisine','Souffle','Puanteur','Parfum','Nourriture','Fleurs','Claquement','Vent','Pluie','Tonnerre','Chaleur','Froid','Fatigue','Adrénaline','Douleur','Humidité','Sécheresse','Perdu','Regard','Tombé','Séparé','Sport','Télévision','Radio','Élégant','Nu','Couple','Amis','Alcool','Transport','Coups','Chant','Yeux','Ravin','Explosion','Sécurité','Uniforme','Rires','Jeux','Pleurs','Micro'];
+var winWords = ['Précis','Solidaire','Honnête','Calme','Confiant','Courageux','Inspiré','Concentré','Puissant','Inventif','Surprenant','Vif','Ingénieux'];
+var loseWords = ['Affolé','Apeuré','Choqué','Découragé','Désarmé','Énervé','Fatigué','Impatient','Surpris','Perdu','Isolé'];
 
 function load() {
     camera = document.getElementById("video2");
@@ -151,11 +154,11 @@ function detectMarkers() {
             if (!result) {
                 var dice = Math.floor(Math.random() * 3);
                 if (dice < 1) {
-                    var word = 'Perdu';
+                    var word = pickInList(loseWords, 1)[0];
                     headerText = '-1 ' + word;
                     result = 'failure';
                 } else {
-                    var word = 'Confiant';
+                    var word = pickInList(winWords, 1)[0];
                     headerText = '+' + dice.toString() + ' ' + word;
                     result = 'success';
                 }
