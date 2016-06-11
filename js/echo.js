@@ -4,6 +4,7 @@ global MediaStreamTrack
 global THREE
 global AR
 global POS
+global localStorage
 */
 
 function ready(fn) {
@@ -23,6 +24,10 @@ var step = 0.0;
 var resetOrientation;
 var container;
 var lastDetect;
+
+var charaCount = 35;
+var itemCount = 25;
+var placeCount = 28;
 
 var modelSize = 35.0; //millimeters
 
@@ -164,12 +169,18 @@ function createScenes(){
   texture = createTexture();
   scene3.add(texture);
   
+  var mission = readMission();
+  if (!mission) {
+    mission = pickMission();
+    writeMission(mission);
+  }
+  
   models ={};
-  addModel('110', 'place/1.jpg', 'cube');
-  addModel('120', 'chara/1.jpg', 'sphere');
-  addModel('130', 'chara/2.jpg', 'sphere');
-  addModel('140', 'item/1.jpg', 'torusKnot');
-  addModel('400', 'chara/3.jpg', 'sphere');
+  addModel('110', 'place/' + mission.place + '.jpg', 'cube');
+  addModel('120', 'chara/' + mission.chara1 + '.jpg', 'sphere');
+  addModel('130', 'chara/' + mission.chara2 + '.jpg', 'sphere');
+  addModel('140', 'item/' + mission.item + '.jpg', 'torusKnot');
+  addModel('400', 'chara/' + mission.chara3 + '.jpg', 'sphere');
   
 }
 
@@ -231,6 +242,10 @@ function createModel(path, type){
 function updateScenes(markers){
   if (markers.length > 0){
     markers.forEach(function(marker) {
+      if (marker.id === 500) {
+        resetMission();
+      }
+      
       var model = models[marker.id];
       if (model) {
         lastDetect[marker.id] = Date.now();
@@ -288,6 +303,55 @@ function updateObject(object, rotation, translation){
   object.scale.y = scale;
   object.scale.z = scale;
   
+}
+
+function pickMission() {
+  var place = pick(placeCount);
+  var item = pick(itemCount);
+  
+  var charaList = [];
+  for (var i = 0; i < charaCount; i++) {
+    charaList.push(i);
+  }
+  
+  var chara1 = pickList(charaList);
+  var chara2 = pickList(charaList);
+  var chara3 = pickList(charaList);
+  
+  return {
+    place: place,
+    item: item,
+    chara1: chara1,
+    chara2: chara2,
+    chara3: chara3
+  };
+}
+
+function pick(max) {
+  return Math.floor(Math.random() * max);
+}
+
+function pickList(list) {
+  var choiceIndex = Math.floor(Math.random() * list.length);
+  var choice = list[choiceIndex];
+  delete list[choiceIndex];
+  return choice;
+}
+
+function readMission() {
+  var json = localStorage.currentMission;
+  if (!json) return null;
+  return JSON.parse(json);
+}
+
+function writeMission(mission) {
+  if (!mission) return;
+  var json = JSON.stringify(mission);
+  localStorage.currentMission = json;
+}
+
+function resetMission() {
+  localStorage.currentMission = null;
 }
 
 ready(load);
