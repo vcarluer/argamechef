@@ -1,0 +1,35 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>- Q - Recherche d'échos</title>
+        <meta charset="UTF-8"></meta>
+        <meta name="viewport" content="width=device-width, initial-scale=1"> 
+        <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+        <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+        <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+        
+        <script type="text/javascript" src="bower_components/js-polyfills/web.min.js"></script> 
+        
+        <script type="text/javascript" src="bower_components/three.js/build/three.min.js"></script> 
+        
+        <script type="text/javascript" src="bower_components/js-aruco/src/svd.js"></script>
+        <script type="text/javascript" src="bower_components/js-aruco/src/posit1.js"></script>
+        <script type="text/javascript" src="bower_components/js-aruco/src/cv.js"></script> 
+        <script type="text/javascript" src="bower_components/js-aruco/src/aruco.js"></script> 
+        
+        <script src="./js/echo.js"></script>
+    </head>
+    <body>
+        <div data-role="page">
+            <div data-role="header"><h1>- Q - Recherche d'échos</h1></div>
+            <div data-role="main">
+                <video id="video" width=320 height=240 autoplay="true" style="display:none;"></video>
+                <canvas id="canvas" style="width: 320px; height: 240px; float: left; border: solid 1px black;display:none;"></canvas>
+                <div id="container"></div>
+            </div>
+            <div data-role="footer">
+                <a href="index.html" class="ui-btn">Retour</a>
+            </div>
+        </div>
+    </body>
+</html>
