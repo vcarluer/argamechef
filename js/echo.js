@@ -22,6 +22,7 @@ var models, texture;
 var step = 0.0;
 var resetOrientation;
 var container;
+var lastDetect;
 
 var modelSize = 35.0; //millimeters
 
@@ -48,6 +49,7 @@ function init() {
       createRenderers();
       createScenes();
       
+      lastDetect = {};
       window.addEventListener('orientationchange', updateOrientation, false);
 
         function updateOrientation() {
@@ -208,6 +210,7 @@ function updateScenes(markers){
     markers.forEach(function(marker) {
       var model = models[marker.id];
       if (model) {
+        lastDetect[marker.id] = Date.now();
         var corners, corner, pose, i;
         corners = marker.corners;
         
@@ -228,6 +231,16 @@ function updateScenes(markers){
       }
     });
   }
+  
+  for(var markerId in lastDetect) {
+      var last = lastDetect[markerId];
+      if ((Date.now() - last) > 500) {
+        var model = models[markerId];
+        if (model) {
+          model.position.x = -100;
+        }
+      }
+    }
   
   texture.children[0].material.map.needsUpdate = true;
 }
