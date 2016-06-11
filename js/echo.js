@@ -239,6 +239,8 @@ function updateScenes(markers){
         if (model) {
           model.position.x = -100;
         }
+        
+        delete lastDetect[markerId]
       }
     }
   
