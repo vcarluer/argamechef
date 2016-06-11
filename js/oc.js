@@ -146,6 +146,8 @@ function detectMarkers() {
     var markers = detector.detect(imageData);
     if (markers && markers.length > 0) {
         var marker = markers[0];
+        texts = [];
+        headerText = '';
         if (marker.id === 500) {
             resetMission();
         }
@@ -168,6 +170,7 @@ function detectMarkers() {
         if (marker.id === 200) {
             result = 'success';
             headerText = 'Intrication en cours';
+            texts = pickInList(intricationWords, 5);
         }
         
         if (marker.id === 300) {
@@ -206,7 +209,16 @@ function draw() {
                 context2.strokeStyle = "#990000"
             }
             
-            context2.strokeText(headerText, 25, 70);   
+            context2.strokeText(headerText, 25, 25);   
+            
+            if (texts && texts.length > 0) {
+                for(var i = 0; i < texts.length; i++) {
+                    var word = texts[i];
+                    var size = (canvas2.width / word.length);
+                    context2.font = '16pt Calibri';
+                    context2.strokeText(word, 50 + i * 5, 50 + i * 25 + 15);   
+                }
+            }
         }
         
         drawContext.drawImage(canvas2, 0, 0, drawCanvas.width, drawCanvas.height); 
