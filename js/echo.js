@@ -7,14 +7,6 @@ global POS
 global localStorage
 */
 
-function ready(fn) {
-  if (document.readyState != 'loading'){
-    fn();
-  } else {
-    document.addEventListener('DOMContentLoaded', fn);
-  }
-}
-
 var video, canvas, context, imageData, detector, posit;
 var renderer3;
 var scene3, scene4;
@@ -24,10 +16,6 @@ var step = 0.0;
 var resetOrientation;
 var container;
 var lastDetect;
-
-var charaCount = 35;
-var itemCount = 25;
-var placeCount = 28;
 
 var modelSize = 35.0; //millimeters
 
@@ -57,40 +45,35 @@ function init() {
       lastDetect = {};
       window.addEventListener('orientationchange', updateOrientation, false);
 
-        function updateOrientation() {
-            resetOrientation = true;
-        }
-
       requestAnimationFrame(tick);
 }
 
+function updateOrientation() {
+    resetOrientation = true;
+}
+
 function initVideo() {
-    var requestLastMedia = true;
-    if (requestLastMedia) {
-        MediaStreamTrack.getSources(function(sourceInfos) {
-          var audioSource = null;
-          var videoSource = null;
-        
-          for (var i = 0; i != sourceInfos.length; ++i) {
-            var sourceInfo = sourceInfos[i];
-            if (sourceInfo.kind === 'audio') {
-              console.log(sourceInfo.id, sourceInfo.label || 'microphone');
-        
-              audioSource = sourceInfo.id;
-            } else if (sourceInfo.kind === 'video') {
-              console.log(sourceInfo.id, sourceInfo.label || 'camera');
-        
-              videoSource = sourceInfo.id;
-            } else {
-              console.log('Some other kind of source: ', sourceInfo);
-            }
-          }
-        
-          sourceSelected(audioSource, videoSource);
-        });
-    } else {
-        navigator.getUserMedia({video:true}, sourceSuccessCallback, sourceErrorCallback);    
-    }
+    MediaStreamTrack.getSources(function(sourceInfos) {
+      var audioSource = null;
+      var videoSource = null;
+    
+      for (var i = 0; i != sourceInfos.length; ++i) {
+        var sourceInfo = sourceInfos[i];
+        if (sourceInfo.kind === 'audio') {
+          console.log(sourceInfo.id, sourceInfo.label || 'microphone');
+    
+          audioSource = sourceInfo.id;
+        } else if (sourceInfo.kind === 'video') {
+          console.log(sourceInfo.id, sourceInfo.label || 'camera');
+    
+          videoSource = sourceInfo.id;
+        } else {
+          console.log('Some other kind of source: ', sourceInfo);
+        }
+      }
+    
+      sourceSelected(audioSource, videoSource);
+    });
 }
 
 function sourceSelected(audioSource, videoSource) {
@@ -169,11 +152,7 @@ function createScenes(){
   texture = createTexture();
   scene3.add(texture);
   
-  var mission = readMission();
-  if (!mission) {
-    mission = pickMission();
-    writeMission(mission);
-  }
+  var mission = getMission();
   
   models ={};
   addModel('110', 'place/' + mission.place + '.jpg', 'cube');
@@ -303,55 +282,6 @@ function updateObject(object, rotation, translation){
   object.scale.y = scale;
   object.scale.z = scale;
   
-}
-
-function pickMission() {
-  var place = pick(placeCount);
-  var item = pick(itemCount);
-  
-  var charaList = [];
-  for (var i = 0; i < charaCount; i++) {
-    charaList.push(i);
-  }
-  
-  var chara1 = pickList(charaList);
-  var chara2 = pickList(charaList);
-  var chara3 = pickList(charaList);
-  
-  return {
-    place: place,
-    item: item,
-    chara1: chara1,
-    chara2: chara2,
-    chara3: chara3
-  };
-}
-
-function pick(max) {
-  return Math.floor(Math.random() * max);
-}
-
-function pickList(list) {
-  var choiceIndex = Math.floor(Math.random() * list.length);
-  var choice = list[choiceIndex];
-  delete list[choiceIndex];
-  return choice;
-}
-
-function readMission() {
-  var json = localStorage.currentMission;
-  if (!json) return null;
-  return JSON.parse(json);
-}
-
-function writeMission(mission) {
-  if (!mission) return;
-  var json = JSON.stringify(mission);
-  localStorage.currentMission = json;
-}
-
-function resetMission() {
-  localStorage.currentMission = null;
 }
 
 ready(load);
