@@ -18,7 +18,7 @@ var video, canvas, context, imageData, detector, posit;
 var renderer3;
 var scene3, scene4;
 var camera3, camera4;
-var model, texture;
+var models, texture;
 var step = 0.0;
 var resetOrientation;
 var container;
@@ -149,7 +149,7 @@ function createRenderers(){
   scene4 = new THREE.Scene();
   camera4 = new THREE.PerspectiveCamera(40, canvas.width / canvas.height, 1, 1000);
   scene4.add(camera4);
-};
+}
 
 function render(){
   renderer3.autoClear = false;
@@ -161,9 +161,20 @@ function render(){
 function createScenes(){
   texture = createTexture();
   scene3.add(texture);
+  
+  models ={};
+  addModel('110', 'place/1.jpg');
+  addModel('120', 'chara/1.jpg');
+  addModel('130', 'chara/2.jpg');
+  addModel('140', 'item/1.jpg');
+  addModel('400', 'chara/3.jpg');
+  
+}
 
-  model = createModel();
+function addModel(id, path) {
+  var model = createModel(path);
   scene4.add(model);
+  models[id] = model;
 }
 
 function createTexture(){
@@ -180,10 +191,10 @@ function createTexture(){
   return object;
 }
 
-function createModel(){
+function createModel(path){
   var object = new THREE.Object3D(),
       geometry = new THREE.SphereGeometry(0.5, 15, 15, Math.PI),
-      texture = THREE.ImageUtils.loadTexture("textures/cube/place/1.jpg"),
+      texture = THREE.ImageUtils.loadTexture("textures/cube/" + path),
       material = new THREE.MeshBasicMaterial( {map: texture} ),
       mesh = new THREE.Mesh(geometry, material);
   
@@ -193,25 +204,29 @@ function createModel(){
 }
 
 function updateScenes(markers){
-  var corners, corner, pose, i;
-  
   if (markers.length > 0){
-    corners = markers[0].corners;
-    
-    for (i = 0; i < corners.length; ++ i){
-      corner = corners[i];
-      
-      corner.x = corner.x - (canvas.width / 2);
-      corner.y = (canvas.height / 2) - corner.y;
-    }
-    
-    pose = posit.pose(corners);
-    
-    updateObject(model, pose.bestRotation, pose.bestTranslation);
-
-    step += 0.025;
-    
-    model.rotation.z -= step;
+    markers.forEach(function(marker) {
+      var model = models[marker.id];
+      if (model) {
+        var corners, corner, pose, i;
+        corners = marker.corners;
+        
+        for (i = 0; i < corners.length; ++ i){
+          corner = corners[i];
+          
+          corner.x = corner.x - (canvas.width / 2);
+          corner.y = (canvas.height / 2) - corner.y;
+        }
+        
+        pose = posit.pose(corners);
+        
+        updateObject(model, pose.bestRotation, pose.bestTranslation);
+        
+        step += 0.025;
+        
+        model.rotation.z -= step;  
+      }
+    });
   }
   
   texture.children[0].material.map.needsUpdate = true;
