@@ -38,6 +38,17 @@ function pick(max) {
   return Math.floor(Math.random() * max);
 }
 
+function pickInList(list, count) {
+  var result = [], cloneList = list.slice(0), pickItem;
+  
+  for(var i = 0; i < count; i++) {
+    pickItem = pickList(cloneList);
+    result.push(pickItem);
+  }
+  
+  return result;
+}
+
 function pickList(list) {
   var choiceIndex = Math.floor(Math.random() * list.length);
   var choice = list[choiceIndex];

@@ -10,7 +10,8 @@ var camera, canvas, context, imageData, detector;
 var canvas2, context2, imageData2, detector2;
 var debugImage;
 var drawCanvas, drawContext, resetCanvas;
-var resultAl;
+var result;
+var headerText, texts;
 
 function load() {
     camera = document.getElementById("video2");
@@ -29,6 +30,9 @@ function load() {
     
     drawCanvas.width = window.innerWidth;
     drawCanvas.height = window.innerHeight - 100;
+    
+    headerText = '';
+    texts = [];
     
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
     if (navigator.getUserMedia){
@@ -121,9 +125,10 @@ function tick(){
     requestAnimationFrame(tick);
     
     if (video1.readyState === video1.HAVE_ENOUGH_DATA){
-        snapshot();
-        
-        detectMarkers();
+        if (!result) {
+            snapshot();
+            detectMarkers();    
+        }
             
         draw();
     }
@@ -143,11 +148,16 @@ function detectMarkers() {
         }
     
         if (marker.id === 200) {
-            if (!resultAl) {
-                if (Math.floor(Math.random() * 3) < 1) {
-                    resultAl = 'failure';
+            if (!result) {
+                var dice = Math.floor(Math.random() * 3);
+                if (dice < 1) {
+                    var word = 'Perdu';
+                    headerText = '-1 ' + word;
+                    result = 'failure';
                 } else {
-                    resultAl = 'success';
+                    var word = 'Confiant';
+                    headerText = '+' + dice.toString() + ' ' + word;
+                    result = 'success';
                 }
             }
         }
@@ -156,17 +166,29 @@ function detectMarkers() {
 
 function draw() {
     drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-    if (resultAl && video2.readyState === video2.HAVE_ENOUGH_DATA) {
+    if (result && video2.readyState === video2.HAVE_ENOUGH_DATA) {
         context2.drawImage(video2, 0, 0, camera.width, camera.height);
         imageData2 = context2.getImageData(0, 0, camera.width, camera.height);
         detector2.detect(imageData2);
         
         context2.clearRect(0, 0, camera.width, camera.height);    
         
-        if (resultAl === 'success') {
+        if (result === 'success') {
             drawSuccess(detector2, context2);    
         } else {
             drawFailure(detector2, context2);
+        }
+        
+        if (headerText) {
+            context2.font = (canvas2.width / headerText.length).toString() +  'pt Calibri';
+            context2.lineWidth = 2;
+            if (result === 'success') {
+                context2.strokeStyle = "#009900";    
+            } else {
+                context2.strokeStyle = "#990000"
+            }
+            
+            context2.strokeText(headerText, 25, 70);   
         }
         
         drawContext.drawImage(canvas2, 0, 0, drawCanvas.width, drawCanvas.height); 
