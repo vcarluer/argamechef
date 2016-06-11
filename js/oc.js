@@ -150,7 +150,7 @@ function detectMarkers() {
             resetMission();
         }
     
-        if (marker.id === 200) {
+        if (marker.id === 42) {
             if (!result) {
                 var dice = Math.floor(Math.random() * 3);
                 if (dice < 1) {
@@ -163,6 +163,21 @@ function detectMarkers() {
                     result = 'success';
                 }
             }
+        }
+        
+        if (marker.id === 200) {
+            result = 'success';
+            headerText = 'Intrication en cours';
+        }
+        
+        if (marker.id === 300) {
+            result = 'success';
+            headerText = 'Réussite !';
+        }
+        
+        if (marker.id === 310) {
+            result = 'failure';
+            headerText = 'Echec !';
         }
     }
 }
