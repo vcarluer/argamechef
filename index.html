@@ -11,15 +11,20 @@
         <script src="./js/q.js"></script>
         <script src="./js/intro.js"></script>
     </head>
-    <body>
+    <body onclick="go();">
         <div data-role="page" style='color:white;background-color:black;'>
             <div data-role="main" style='color:white;background-color:black;'>
-                <audio id='jingle' src='./sounds/jingle.wav' style='display:none;'></audio>
+                <audio id='jingle' src='./sounds/jingle.wav' style="display:none" preload='auto'></audio>
                 <div class='Container'>
+                    <div id='play'>
+                        <div id='info'>Cliquez uniquement si vous êtes un agent authorisé.</div>
+                        <div id='containerImage'><img id='imgPlay' src='./img/play.png'></img></div>
+                    </div>
                     <div id='t1' class='OtherText'>The</div><br/>
-                    <div class='Title'>Q</div>
+                    <div id='title' class='Title'>Q</div>
                     <div id='t2' class='OtherText'>uantum</div></br>
                     <div id='t3' class='OtherText'>Company</div>
+                    
                 </div>
             </div>
         </div>
