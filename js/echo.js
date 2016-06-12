@@ -17,7 +17,7 @@ var resetOrientation;
 var container;
 var lastDetect;
 
-var modelSize = 35.0; //millimeters
+var modelSize = 50.0; //millimeters
 
 function load() {
     container = document.getElementById("container");

@@ -13,12 +13,12 @@ function ready(fn) {
 }
 
 function pickMission() {
-  var place = pick(placeCount);
-  var item = pick(itemCount);
+  var place = pick(placeCount) + 1;
+  var item = pick(itemCount) + 1;
   
   var charaList = [];
   for (var i = 0; i < charaCount; i++) {
-    charaList.push(i);
+    charaList.push(i + 1);
   }
   
   var chara1 = pickList(charaList);
@@ -70,7 +70,10 @@ function writeMission(mission) {
 
 function resetMission() {
   localStorage.removeItem('currentMission');
-  localStorage.lastMissionNames = localStorage.captureNames.toString();
+  if (localStorage.captureNames) {
+    localStorage.lastMissionNames = localStorage.captureNames.toString();  
+  }
+  
   // debug(localStorage.lastMissionNames);
   localStorage.removeItem('captureNames');
   switchPrefix();
