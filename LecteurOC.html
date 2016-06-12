@@ -5,6 +5,8 @@
         <meta charset="UTF-8"></meta>
         <meta name="viewport" content="width=device-width, initial-scale=1"> 
         <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+        <link rel="stylesheet" href="./css/intro.css" />
+        
         <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
         <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
         
@@ -20,9 +22,14 @@
         <div data-role="page">
             <div data-role="header"><h1>- Q - Lecteur OC</h1></div>
             <div data-role="main">
+                <audio id='alarm' src='./sounds/alarm.mp3' style="display:none" preload='auto'></audio>
                 <video id="video1" width=320 height=240 autoplay="true" style="display:none;"></video>
                 <video id="video2" width=320 height=240 autoplay="true" style="display:none;"></video>
-                <canvas id="drawCanvas"></canvas>
+                <div id='play' class="PlayOC" onclick='acquire()';>
+                    <div id='info'>Démarrer l'acquisition.</div>
+                    <div id='containerImage'><img id='imgPlay' src='./img/play.png'></img></div>
+                </div>
+                <canvas id="drawCanvas" style='display:none;'></canvas>
             </div>
             <div data-role="footer">
                 <a href="applications.html" class="ui-btn-inline" rel="external">Retour</a>

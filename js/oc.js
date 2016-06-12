@@ -17,6 +17,8 @@ var winWords = ['Précis','Solidaire','Honnête','Calme','Confiant','Courageux',
 var loseWords = ['Affolé','Apeuré','Choqué','Découragé','Désarmé','Énervé','Fatigué','Impatient','Surpris','Perdu','Isolé'];
 var captured;
 var startMark;
+var acquired;
+var alarm, firstSound = true;
 
 function load() {
     camera = document.getElementById("video2");
@@ -38,6 +40,16 @@ function load() {
     
     headerText = '';
     texts = [];
+    
+    alarm = document.getElementById('alarm');
+    alarm.setAttribute('muted', 'true');
+    alarm.addEventListener('play', function() {
+        if (firstSound) {
+            alarm.pause();
+            alarm.muted = false;
+            firstSound = false;
+        }
+    });
     
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
     if (navigator.getUserMedia){
@@ -129,19 +141,28 @@ function successCallback2(stream){
 function tick(){
     requestAnimationFrame(tick);
     
-    if (video1.readyState === video1.HAVE_ENOUGH_DATA){
-        if (!result) {
-            snapshot();
-            detectMarkers();    
+    if (acquired) {
+        if (video1.readyState === video1.HAVE_ENOUGH_DATA){
+            if (!result) {
+                snapshot();
+                detectMarkers();    
+            }
+                
+            draw();
         }
-            
-        draw();
+        
+        if (resetCanvas) {
+            drawCanvas.width = window.innerWidth;
+            drawCanvas.height = window.innerHeight - 100;
+        }   
     }
-    
-    if (resetCanvas) {
-        drawCanvas.width = window.innerWidth;
-        drawCanvas.height = window.innerHeight - 100;
-    }
+}
+
+function acquire() {
+    document.getElementById('play').style.display = 'none';
+    document.getElementById('drawCanvas').style.display = 'block';
+    alarm.play();
+    acquired = true;
 }
 
 function detectMarkers() {
@@ -162,6 +183,7 @@ function detectMarkers() {
                     var word = pickInList(loseWords, 1)[0];
                     headerText = '-1 ' + word;
                     result = 'failure';
+                    alarm.play();
                 } else {
                     var word = pickInList(winWords, 1)[0];
                     headerText = '+' + dice.toString() + ' ' + word;
@@ -184,6 +206,7 @@ function detectMarkers() {
         if (marker.id === 310) {
             result = 'failure';
             headerText = 'Echec !';
+            alarm.play();
         }
         
         startMark = Date.now();
