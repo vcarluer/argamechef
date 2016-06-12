@@ -203,7 +203,12 @@ function draw() {
         }
         
         if (headerText) {
-            context2.font = (canvas2.width / headerText.length).toString() +  'pt Calibri';
+            var fontSize = canvas2.width / headerText.length;
+            if (fontSize > 25) {
+                fontSize = 25;
+            }
+            
+            context2.font = (fontSize).toString() +  'pt Calibri';
             context2.lineWidth = 2;
             if (result === 'success') {
                 context2.strokeStyle = "#009900";    
