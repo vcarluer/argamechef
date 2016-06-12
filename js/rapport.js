@@ -7,8 +7,8 @@ function load() {
     }
     
     for(var i = 0; i < data.length; i++) {
-        var imageData = data[i];
-        var image = new Image();
+        var imageData = data[i].data;
+        var image = new Image(data[i].width, data[i].height);
         image.src = imageData;
         div.appendChild(image);
     }

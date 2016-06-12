@@ -93,7 +93,14 @@ function capture(canvas) {
   var newName = prefix + 'capture' + names.length.toString();
   names.push(newName);
   var data = canvas.toDataURL();
-  localStorage[newName] = data;
+  var captureData =  {
+    data: data,
+    width: window.innerWidth,
+    height: window.innerHeight
+  };
+  
+  localStorage[newName] = JSON.stringify(captureData);
+  
   var json = JSON.stringify(names);
   localStorage.captureNames = json;
 }
@@ -128,7 +135,8 @@ function getLastMissionCaptures() {
       var name = names[i];
       var data = localStorage[name];
       if (data) {
-        images.push(data);
+        var imageInfo = JSON.parse(data);
+        images.push(imageInfo);
       }
     }
     
