@@ -16,6 +16,7 @@ var intricationWords = ['Ronronnement','Assourdissant','Sifflement','Crie','Perd
 var winWords = ['Précis','Solidaire','Honnête','Calme','Confiant','Courageux','Inspiré','Concentré','Puissant','Inventif','Surprenant','Vif','Ingénieux'];
 var loseWords = ['Affolé','Apeuré','Choqué','Découragé','Désarmé','Énervé','Fatigué','Impatient','Surpris','Perdu','Isolé'];
 var captured;
+var startMark;
 
 function load() {
     camera = document.getElementById("video2");
@@ -184,6 +185,8 @@ function detectMarkers() {
             result = 'failure';
             headerText = 'Echec !';
         }
+        
+        startMark = Date.now();
     }
 }
 
@@ -195,6 +198,8 @@ function draw() {
         detector2.detect(imageData2);
         
         context2.clearRect(0, 0, camera.width, camera.height);    
+        
+        var elapsed = Date.now() - startMark;
         
         if (result === 'success') {
             drawSuccess(detector2, context2);    
@@ -210,26 +215,54 @@ function draw() {
             
             context2.font = (fontSize).toString() +  'pt Calibri';
             context2.lineWidth = 2;
+            
+            var alpha = elapsed / 3000;
+            if (alpha > 1) {
+                alpha = 1;
+            }
+            
             if (result === 'success') {
                 context2.strokeStyle = "#009900";    
             } else {
                 context2.strokeStyle = "#990000"
             }
             
+            context2.globalAlpha = alpha;
             context2.strokeText(headerText, 25, 35);   
+            context2.globalAlpha = 1;
             
             if (texts && texts.length > 0) {
+                var currentIndex = (Math.floor(elapsed / 2000)) % 5;
+                var step = elapsed % 2000;
+                var alpha = 0;
+                if (step < 1000) {
+                    alpha = step / 1000;
+                } else {
+                    step = step - 1000;
+                    alpha = 1 - (step / 1000);
+                }
+                
+                /*var word = texts[currentIndex];
+                context2.font = '16pt Calibri';
+                
+                context2.strokeText(word, 50 + currentIndex * 5, 50 + currentIndex * 25 + 15);   
+                */
+                
                 for(var i = 0; i < texts.length; i++) {
+                    var distance = Math.abs(currentIndex - i);
+                    var alphaIdx = Math.max((alpha - distance / 3), 0);
+                    context2.globalAlpha = alphaIdx;    
+                    
                     var word = texts[i];
-                    var size = (canvas2.width / word.length);
                     context2.font = '16pt Calibri';
                     context2.strokeText(word, 50 + i * 5, 50 + i * 25 + 15);   
+                    context2.globalAlpha = 1;
                 }
             }
         }
         
         drawContext.drawImage(canvas2, 0, 0, drawCanvas.width, drawCanvas.height);
-        if (!captured) {
+        if (!captured & elapsed > 2000) {
             captured = true;
             capture(canvas2);
         }
