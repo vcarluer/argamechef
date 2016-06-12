@@ -15,6 +15,7 @@ var headerText, texts;
 var intricationWords = ['Ronronnement','Assourdissant','Sifflement','Crie','Perdu','Bois','Miroir','Eau','Feu','Circulation','Gratte-ciel','Lac','Mer','Montagne','Neige','Verdoyant','Palmier','Glissade','Vélo','Marais','Animal','Tambours','Masques','Costumes','Gare','Horloge','Église','Cimetière','Enfants','Parapluie','Arme','Outils','Drapeau','Parking','Bar','Restaurant','Pétards','Défilé','Attaché','Allongé','Assis','Roulement','Balancer','Saut','Sonné','Murmure','Moteur','Musique','Course','Inquiétude','Poursuite','Peur','Recherche','Conversations','Réception','Cuisine','Souffle','Puanteur','Parfum','Nourriture','Fleurs','Claquement','Vent','Pluie','Tonnerre','Chaleur','Froid','Fatigue','Adrénaline','Douleur','Humidité','Sécheresse','Perdu','Regard','Tombé','Séparé','Sport','Télévision','Radio','Élégant','Nu','Couple','Amis','Alcool','Transport','Coups','Chant','Yeux','Ravin','Explosion','Sécurité','Uniforme','Rires','Jeux','Pleurs','Micro'];
 var winWords = ['Précis','Solidaire','Honnête','Calme','Confiant','Courageux','Inspiré','Concentré','Puissant','Inventif','Surprenant','Vif','Ingénieux'];
 var loseWords = ['Affolé','Apeuré','Choqué','Découragé','Désarmé','Énervé','Fatigué','Impatient','Surpris','Perdu','Isolé'];
+var captured;
 
 function load() {
     camera = document.getElementById("video2");
@@ -150,6 +151,7 @@ function detectMarkers() {
         headerText = '';
         if (marker.id === 500) {
             resetMission();
+            window.location.href = 'Rapport.html';
         }
     
         if (marker.id === 42) {
@@ -209,7 +211,7 @@ function draw() {
                 context2.strokeStyle = "#990000"
             }
             
-            context2.strokeText(headerText, 25, 25);   
+            context2.strokeText(headerText, 25, 35);   
             
             if (texts && texts.length > 0) {
                 for(var i = 0; i < texts.length; i++) {
@@ -221,7 +223,11 @@ function draw() {
             }
         }
         
-        drawContext.drawImage(canvas2, 0, 0, drawCanvas.width, drawCanvas.height); 
+        drawContext.drawImage(canvas2, 0, 0, drawCanvas.width, drawCanvas.height);
+        if (!captured) {
+            captured = true;
+            capture(canvas2);
+        }
     } else {
         drawContext.drawImage(canvas, 0, 0, drawCanvas.width, drawCanvas.height);
     }
