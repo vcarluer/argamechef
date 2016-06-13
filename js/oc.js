@@ -19,6 +19,7 @@ var captured;
 var startMark;
 var acquired;
 var alarm, firstSound = true;
+var cameraFaceOK = false;
 
 function load() {
     camera = document.getElementById("video2");
@@ -59,6 +60,8 @@ function load() {
 
 function init() {
     // Get last stream
+    var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+    if (!isFirefox) {
     MediaStreamTrack.getSources(function(sourceInfos) {
       var audioSource = null;
       var videoSource = null;
@@ -79,10 +82,14 @@ function init() {
       }
     
       sourceSelected(audioSource, videoSource);
+      cameraFaceOK = true;
     });
         
     // Get first stream
     navigator.getUserMedia({video:true}, successCallback2, errorCallback);
+    } else {
+        navigator.getUserMedia({video: { facingMode: { exact: "environment" }}}, successCallback, errorCallback);
+    }
     
     imageData = context.getImageData(0, 0, camera.width, camera.height);
     imageData2 = context.getImageData(0, 0, camera.width, camera.height);
@@ -215,79 +222,86 @@ function detectMarkers() {
 
 function draw() {
     drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-    if (result && video2.readyState === video2.HAVE_ENOUGH_DATA) {
-        context2.drawImage(video2, 0, 0, camera.width, camera.height);
-        imageData2 = context2.getImageData(0, 0, camera.width, camera.height);
-        detector2.detect(imageData2);
-        
-        context2.clearRect(0, 0, camera.width, camera.height);    
-        
-        var elapsed = Date.now() - startMark;
-        
-        if (result === 'success') {
-            drawSuccess(detector2, context2);    
-        } else {
-            drawFailure(detector2, context2);
+    if (result) {
+        if (!cameraFaceOK) {
+            cameraFaceOK = true;
+            navigator.getUserMedia({video: { facingMode: "user" }}, successCallback2, errorCallback);
         }
-        
-        if (headerText) {
-            var fontSize = canvas2.width / headerText.length;
-            if (fontSize > 25) {
-                fontSize = 25;
-            }
+    
+        if (video2.readyState === video2.HAVE_ENOUGH_DATA) {
+            context2.drawImage(video2, 0, 0, camera.width, camera.height);
+            imageData2 = context2.getImageData(0, 0, camera.width, camera.height);
+            detector2.detect(imageData2);
             
-            context2.font = (fontSize).toString() +  'pt Calibri';
-            context2.lineWidth = 2;
+            context2.clearRect(0, 0, camera.width, camera.height);    
             
-            var alpha = elapsed / 3000;
-            if (alpha > 1) {
-                alpha = 1;
-            }
+            var elapsed = Date.now() - startMark;
             
             if (result === 'success') {
-                context2.strokeStyle = "#009900";    
+                drawSuccess(detector2, context2);    
             } else {
-                context2.strokeStyle = "#990000"
+                drawFailure(detector2, context2);
             }
             
-            context2.globalAlpha = alpha;
-            context2.strokeText(headerText, 25, 35);   
-            context2.globalAlpha = 1;
-            
-            if (texts && texts.length > 0) {
-                var currentIndex = (Math.floor(elapsed / 2000)) % 5;
-                var step = elapsed % 2000;
-                var alpha = 0;
-                if (step < 1000) {
-                    alpha = step / 1000;
+            if (headerText) {
+                var fontSize = canvas2.width / headerText.length;
+                if (fontSize > 25) {
+                    fontSize = 25;
+                }
+                
+                context2.font = (fontSize).toString() +  'pt Calibri';
+                context2.lineWidth = 2;
+                
+                var alpha = elapsed / 3000;
+                if (alpha > 1) {
+                    alpha = 1;
+                }
+                
+                if (result === 'success') {
+                    context2.strokeStyle = "#009900";    
                 } else {
-                    step = step - 1000;
-                    alpha = 1 - (step / 1000);
+                    context2.strokeStyle = "#990000"
                 }
                 
-                /*var word = texts[currentIndex];
-                context2.font = '16pt Calibri';
+                context2.globalAlpha = alpha;
+                context2.strokeText(headerText, 25, 35);   
+                context2.globalAlpha = 1;
                 
-                context2.strokeText(word, 50 + currentIndex * 5, 50 + currentIndex * 25 + 15);   
-                */
-                
-                for(var i = 0; i < texts.length; i++) {
-                    var distance = Math.abs(currentIndex - i);
-                    var alphaIdx = Math.max((alpha - distance / 3), 0);
-                    context2.globalAlpha = alphaIdx;    
+                if (texts && texts.length > 0) {
+                    var currentIndex = (Math.floor(elapsed / 2000)) % 5;
+                    var step = elapsed % 2000;
+                    var alpha = 0;
+                    if (step < 1000) {
+                        alpha = step / 1000;
+                    } else {
+                        step = step - 1000;
+                        alpha = 1 - (step / 1000);
+                    }
                     
-                    var word = texts[i];
+                    /*var word = texts[currentIndex];
                     context2.font = '16pt Calibri';
-                    context2.strokeText(word, 50 + i * 5, 50 + i * 25 + 15);   
-                    context2.globalAlpha = 1;
+                    
+                    context2.strokeText(word, 50 + currentIndex * 5, 50 + currentIndex * 25 + 15);   
+                    */
+                    
+                    for(var i = 0; i < texts.length; i++) {
+                        var distance = Math.abs(currentIndex - i);
+                        var alphaIdx = Math.max((alpha - distance / 3), 0);
+                        context2.globalAlpha = alphaIdx;    
+                        
+                        var word = texts[i];
+                        context2.font = '16pt Calibri';
+                        context2.strokeText(word, 50 + i * 5, 50 + i * 25 + 15);   
+                        context2.globalAlpha = 1;
+                    }
                 }
             }
-        }
-        
-        drawContext.drawImage(canvas2, 0, 0, drawCanvas.width, drawCanvas.height);
-        if (!captured & elapsed > 2000) {
-            captured = true;
-            capture(canvas2);
+            
+            drawContext.drawImage(canvas2, 0, 0, drawCanvas.width, drawCanvas.height);
+            if (!captured & elapsed > 2000) {
+                captured = true;
+                capture(canvas2);
+            }
         }
     } else {
         drawContext.drawImage(canvas, 0, 0, drawCanvas.width, drawCanvas.height);

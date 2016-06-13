@@ -53,6 +53,8 @@ function updateOrientation() {
 }
 
 function initVideo() {
+  var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+  if (!isFirefox) {
     MediaStreamTrack.getSources(function(sourceInfos) {
       var audioSource = null;
       var videoSource = null;
@@ -74,6 +76,10 @@ function initVideo() {
     
       sourceSelected(audioSource, videoSource);
     });
+  } else {
+    // navigator.getUserMedia({video: { facingMode: "user" }}, sourceSuccessCallback, sourceErrorCallback);
+    navigator.getUserMedia({video: { facingMode: { exact: "environment" }}}, sourceSuccessCallback, sourceErrorCallback);
+    }
 }
 
 function sourceSelected(audioSource, videoSource) {
