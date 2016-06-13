@@ -53,7 +53,7 @@ function updateOrientation() {
 }
 
 function initVideo() {
-    navigator.mediaDevices.enumerateDevices().then(function(sourceInfos) {
+    MediaStreamTrack.getSources(function(sourceInfos) {
       var audioSource = null;
       var videoSource = null;
     
