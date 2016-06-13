@@ -59,7 +59,7 @@ function load() {
 
 function init() {
     // Get last stream
-    MediaStreamTrack.getSources(function(sourceInfos) {
+    navigator.mediaDevices.enumerateDevices().then(function(sourceInfos) {
       var audioSource = null;
       var videoSource = null;
     
