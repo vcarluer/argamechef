@@ -62,31 +62,31 @@ function init() {
     // Get last stream
     var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
     if (!isFirefox) {
-    MediaStreamTrack.getSources(function(sourceInfos) {
-      var audioSource = null;
-      var videoSource = null;
-    
-      for (var i = 0; i != sourceInfos.length; ++i) {
-        var sourceInfo = sourceInfos[i];
-        if (sourceInfo.kind === 'audio') {
-          console.log(sourceInfo.id, sourceInfo.label || 'microphone');
-    
-          audioSource = sourceInfo.id;
-        } else if (sourceInfo.kind === 'video') {
-          console.log(sourceInfo.id, sourceInfo.label || 'camera');
-    
-          videoSource = sourceInfo.id;
-        } else {
-          console.log('Some other kind of source: ', sourceInfo);
-        }
-      }
-    
-      sourceSelected(audioSource, videoSource);
-      cameraFaceOK = true;
-    });
+        MediaStreamTrack.getSources(function(sourceInfos) {
+          var audioSource = null;
+          var videoSource = null;
         
-    // Get first stream
-    navigator.getUserMedia({video:true}, successCallback2, errorCallback);
+          for (var i = 0; i != sourceInfos.length; ++i) {
+            var sourceInfo = sourceInfos[i];
+            if (sourceInfo.kind === 'audio') {
+              console.log(sourceInfo.id, sourceInfo.label || 'microphone');
+        
+              audioSource = sourceInfo.id;
+            } else if (sourceInfo.kind === 'video') {
+              console.log(sourceInfo.id, sourceInfo.label || 'camera');
+        
+              videoSource = sourceInfo.id;
+            } else {
+              console.log('Some other kind of source: ', sourceInfo);
+            }
+          }
+        
+          sourceSelected(audioSource, videoSource);
+        });
+            
+        // Get first stream
+        navigator.getUserMedia({video:true}, successCallback2, errorCallback);
+        cameraFaceOK = true;
     } else {
         navigator.getUserMedia({video: { facingMode: { exact: "environment" }}}, successCallback, errorCallback);
     }
